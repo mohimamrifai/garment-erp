@@ -49,6 +49,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Typegen
+        run: pnpm typegen
+
       - name: Typecheck
         run: pnpm typecheck
 

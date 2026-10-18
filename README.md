@@ -80,17 +80,18 @@ mengelola pengguna dan melihat audit log.
 
 ## Skrip
 
-| Skrip                                                      | Fungsi                                      |
-| ---------------------------------------------------------- | ------------------------------------------- |
-| `pnpm dev`                                                 | Jalankan dev server (Turbopack)             |
-| `pnpm build` / `pnpm start`                                | Build & jalankan produksi                   |
-| `pnpm lint` / `pnpm typecheck` / `pnpm format`             | Kualitas kode                               |
-| `pnpm test:unit`                                           | Tes unit (tanpa database)                   |
-| `pnpm test:integration`                                    | Tes integrasi (memakai `DATABASE_URL_TEST`) |
-| `pnpm test:e2e`                                            | Playwright E2E (jalankan `pnpm build` dulu) |
-| `pnpm verify`                                              | lint + typecheck + unit + integration       |
-| `pnpm db:generate` / `db:migrate` / `db:seed` / `db:reset` | Drizzle Kit & seed                          |
-| `pnpm db:studio`                                           | Drizzle Studio                              |
+| Skrip                                                      | Fungsi                                           |
+| ---------------------------------------------------------- | ------------------------------------------------ |
+| `pnpm dev`                                                 | Jalankan dev server (Turbopack)                  |
+| `pnpm build` / `pnpm start`                                | Build & jalankan produksi                        |
+| `pnpm lint` / `pnpm typecheck` / `pnpm format`             | Kualitas kode                                    |
+| `pnpm typegen`                                             | Generate tipe Next (rute/layout) untuk typecheck |
+| `pnpm test:unit`                                           | Tes unit (tanpa database)                        |
+| `pnpm test:integration`                                    | Tes integrasi (memakai `DATABASE_URL_TEST`)      |
+| `pnpm test:e2e`                                            | Playwright E2E (jalankan `pnpm build` dulu)      |
+| `pnpm verify`                                              | lint + typecheck + unit + integration            |
+| `pnpm db:generate` / `db:migrate` / `db:seed` / `db:reset` | Drizzle Kit & seed                               |
+| `pnpm db:studio`                                           | Drizzle Studio                                   |
 
 ## Testing
 
