@@ -20,3 +20,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Jangan pernah menulis saldo stok langsung ke tabel; semua perubahan stok lewat inventory engine
   (Fase 3). Operasi multi-tabel wajib dalam satu transaksi DB + audit log.
 - Format respons API: sukses `{ data, meta? }`; error `{ error: { code, message, details? } }`.
+
+## Testing
+
+- `pnpm verify` = lint + typecheck + unit + integration. Jalankan sebelum commit besar.
+- Unit: logika murni tanpa DB. Integration: `tests/integration` memakai `DATABASE_URL_TEST`
+  (di-reset otomatis per file via `tests/setup/integration.ts`; jangan arahkan ke DB dev).
+- E2E Playwright WAJIB terhadap build produksi: `pnpm build` lalu `pnpm test:e2e`
+  (hentikan dev server dulu — Playwright menyalakan `next start` di port 3000).
+  Dev server membuat E2E lambat/flaky karena kompilasi on-demand; jangan dijadikan target.
+- Rate limit Better Auth (produksi: 3 percobaan/10 dtk untuk `/sign-in`) dimatikan khusus E2E
+  lewat `E2E_DISABLE_RATE_LIMIT=1` yang di-set di `playwright.config.ts`.
+- Selector Playwright: pakai role + `exact: true` bila teks bisa jadi substring elemen lain
+  (mis. "Buyer" vs "Kelola Buyer").
+

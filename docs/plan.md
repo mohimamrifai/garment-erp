@@ -94,19 +94,19 @@ Estimasi PRD (4–6 minggu) tetap relevan bila item bertanda *(opsional)* dilewa
 
 ### Tasks
 
-- [ ] 1.1 Prasyarat: akun GitHub, Vercel, Neon (semua paket gratis, tanpa kartu — verifikasi saat signup); salin plan ini ke `docs/plan.md`; catat keputusan yang sudah dikunci di README (bagian Arsitektur).
-- [ ] 1.2 `git init`, `.gitignore`, `.editorconfig`, ESLint + Prettier, konvensi conventional commits, README skeleton.
-- [ ] 1.3 Scaffold Next.js App Router + TS strict (pnpm); buat struktur folder inti §7.4 (sebagian kosong); `.env.example` tanpa secret; pin versi di `package.json`.
-- [ ] 1.4 Tailwind + shadcn/ui init; tema dasar; komponen awal: button, input, select, table, dialog, dropdown, badge, sonner. Tema netral, teks UI Bahasa Indonesia.
-- [ ] 1.5 Docker Compose Postgres 16 (dev) + database tes `garment_erp_test`; Drizzle: `drizzle.config.ts`, client, skrip `db:generate` / `db:migrate` / `db:seed` / `db:reset`; CI GitHub Actions dasar (typecheck + unit).
-- [ ] 1.6 Skema database F1: tabel Better Auth (`user`, `session`, `account`, `verification`) + `roles` + `user_roles`; migrasi awal; seed 8 role (Admin, Manager, Sales, Purchasing, Warehouse, Production Supervisor, QC Staff, Shipping Staff).
-- [ ] 1.7 Better Auth: `auth.ts` (drizzleAdapter provider `"pg"`, `emailAndPassword` enabled + `disableSignUp: true`, plugin `admin`); halaman `(auth)/login` + logout; middleware proteksi route; helper `requireAuth()` / `requireRole()`; matriks izin typed.
-- [ ] 1.8 Manajemen user (settings, admin-only): daftar user, buat user tanpa registrasi publik, aktif/nonaktifkan, tetapkan multi-role; semua aksi diaudit.
-- [ ] 1.9 Layout dashboard: shell (sidebar per role, header, breadcrumb, menu modul), route placeholder per modul, redirect `/` → `/dashboard`.
-- [ ] 1.10 Komponen & util shared: helper format error API, zod→API error mapping, DataTable (sort/filter/paginate server-side), FormField wrapper (RHF + zodResolver), ConfirmDialog, StatusBadge, util waktu (UTC → Asia/Jakarta), util angka/IDR, helper penomoran dokumen (`document_sequences` + `nextDocumentNumber(tx, prefix, period)`).
-- [ ] 1.11 Audit log: tabel `audit_logs` + `recordAudit(tx, {...})`.
-- [ ] 1.12 **Vertical slice Buyer (pola referensi):** schema + Zod + repository + service; `/api/v1/buyers` (GET list paginate, POST, PATCH, POST deaktivasi); UI list + form; RBAC (Admin/Manager/Sales); audit; tes: unit 2–3, integration 2 (create + audit, list paginate), e2e 1 (login admin → buat buyer → tampil di list).
-- [ ] 1.13 Seed dev dasar + akun admin; README awal (setup lokal, akun seed).
+- [x] 1.1 Prasyarat: akun GitHub, Vercel, Neon (semua paket gratis, tanpa kartu — verifikasi saat signup); salin plan ini ke `docs/plan.md`; catat keputusan yang sudah dikunci di README (bagian Arsitektur).
+- [x] 1.2 `git init`, `.gitignore`, `.editorconfig`, ESLint + Prettier, konvensi conventional commits, README skeleton.
+- [x] 1.3 Scaffold Next.js App Router + TS strict (pnpm); buat struktur folder inti §7.4 (sebagian kosong); `.env.example` tanpa secret; pin versi di `package.json`.
+- [x] 1.4 Tailwind + shadcn/ui init; tema dasar; komponen awal: button, input, select, table, dialog, dropdown, badge, sonner. Tema netral, teks UI Bahasa Indonesia.
+- [x] 1.5 Docker Compose Postgres 16 (dev) + database tes `garment_erp_test`; Drizzle: `drizzle.config.ts`, client, skrip `db:generate` / `db:migrate` / `db:seed` / `db:reset`; CI GitHub Actions dasar (typecheck + unit).
+- [x] 1.6 Skema database F1: tabel Better Auth (`user`, `session`, `account`, `verification`) + `roles` + `user_roles`; migrasi awal; seed 8 role (Admin, Manager, Sales, Purchasing, Warehouse, Production Supervisor, QC Staff, Shipping Staff).
+- [x] 1.7 Better Auth: `auth.ts` (drizzleAdapter provider `"pg"`, `emailAndPassword` enabled + `disableSignUp: true`, plugin `admin`); halaman `(auth)/login` + logout; middleware proteksi route; helper `requireAuth()` / `requireRole()`; matriks izin typed.
+- [x] 1.8 Manajemen user (settings, admin-only): daftar user, buat user tanpa registrasi publik, aktif/nonaktifkan, tetapkan multi-role; semua aksi diaudit.
+- [x] 1.9 Layout dashboard: shell (sidebar per role, header, breadcrumb, menu modul), route placeholder per modul, redirect `/` → `/dashboard`.
+- [x] 1.10 Komponen & util shared: helper format error API, zod→API error mapping, DataTable (sort/filter/paginate server-side), FormField wrapper (RHF + zodResolver), ConfirmDialog, StatusBadge, util waktu (UTC → Asia/Jakarta), util angka/IDR, helper penomoran dokumen (`document_sequences` + `nextDocumentNumber(tx, prefix, period)`).
+- [x] 1.11 Audit log: tabel `audit_logs` + `recordAudit(tx, {...})`.
+- [x] 1.12 **Vertical slice Buyer (pola referensi):** schema + Zod + repository + service; `/api/v1/buyers` (GET list paginate, POST, PATCH, POST deaktivasi); UI list + form; RBAC (Admin/Manager/Sales); audit; tes: unit 2–3, integration 2 (create + audit, list paginate), e2e 1 (login admin → buat buyer → tampil di list).
+- [x] 1.13 Seed dev dasar + akun admin; README awal (setup lokal, akun seed).
 - [ ] 1.14 *(Opsional, ±0,5 hari)* Smoke deploy Vercel + Neon satu halaman — validasi pipeline & env lebih awal.
 
 ### Definisi selesai F1
