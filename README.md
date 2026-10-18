@@ -20,14 +20,18 @@ Postgres (Singapore); database produksi di-seed dengan data contoh yang sama sep
 | Fase | Lingkup                                                  | Status     |
 | ---- | -------------------------------------------------------- | ---------- |
 | F1   | Fondasi: auth, RBAC, audit, master data buyer, dashboard | ✅ Selesai |
-| F2   | Sales Order + konfirmasi + penjadwalan produksi          | ⏳ Berikut |
-| F3   | Purchasing, penerimaan material, inventory engine        | ⏳ Rencana |
+| F2   | Master data lengkap + BOM + Sales Order                  | ✅ Selesai |
+| F3   | Purchasing, penerimaan material, inventory engine        | ⏳ Berikut |
 | F4   | Produksi (SPK), QC                                       | ⏳ Rencana |
 | F5   | Pengiriman, laporan                                      | ⏳ Rencana |
 | F6   | Polish, dokumentasi, deploy demo                         | ⏳ Rencana |
 
 > F1 juga mencakup **design system "Pabrik"** (identitas visual, token, komponen) —
 > dokumentasi di [`docs/design-system.md`](docs/design-system.md).
+> F2 mencakup master data organisasi & produk (departemen, karyawan, lini, supplier,
+> satuan, material, produk + varian, gudang + lokasi), **BOM berversi** (versi aktif
+> beku — revisi lewat versi baru), dan modul **Sales Order** (draf → konfirmasi →
+> pembatalan beralasan, penomoran `SO-YYYYMM-####`).
 
 ## Stack
 
@@ -104,11 +108,14 @@ Pada deployment non-demo (variabel tidak diisi), tombol disembunyikan.
 
 ## Testing
 
-- **Unit** — logika murni: matriks izin, format tanggal/periode dokumen Jakarta, skema Zod.
+- **Unit** — logika murni: matriks izin, format tanggal/periode dokumen Jakarta, skema Zod,
+  transisi status sales order.
 - **Integration** — service + PostgreSQL nyata (`garment_erp_test`, di-reset otomatis per file),
-  termasuk penomoran dokumen atomik saat 10 transaksi paralel.
+  termasuk penomoran dokumen atomik saat 10 transaksi paralel, siklus SO (buat → konfirmasi →
+  batal), guard nonaktif master data terpakai, dan versi BOM.
 - **E2E Playwright** — alur nyata di browser: login, logout, penyaringan menu per role, penolakan
-  akses halaman admin, dan vertical slice buyer (buat, cari, nonaktifkan).
+  akses halaman admin, vertical slice buyer (buat, cari, nonaktifkan), dan sales order
+  (buat draf → konfirmasi → batalkan).
 
 E2E berjalan terhadap **build produksi** (`next start`), bukan dev server, agar stabil:
 
@@ -135,6 +142,8 @@ src/
     layout/            # sidebar, header, breadcrumb, pagination, placeholder modul
   modules/             # modul bisnis: schemas + service + components per domain
     buyer/  user/      # F1: master data buyer & manajemen pengguna
+    master/            # F2: organisasi, supplier, satuan, material, produk, gudang, BOM
+    sales-order/       # F2: sales order + status & transisinya
   lib/
     auth/              # konfigurasi Better Auth, DAL sesi, guard API
     db/                # koneksi Drizzle + schema + seed

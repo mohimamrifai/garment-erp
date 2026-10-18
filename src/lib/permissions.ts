@@ -88,7 +88,26 @@ export type Permission =
   | "buyer.view"
   | "buyer.create"
   | "buyer.update"
-  | "buyer.deactivate";
+  | "buyer.deactivate"
+  | "master.organization.view"
+  | "master.organization.manage"
+  | "master.supplier.view"
+  | "master.supplier.manage"
+  | "master.uom.view"
+  | "master.uom.manage"
+  | "master.material.view"
+  | "master.material.manage"
+  | "master.product.view"
+  | "master.product.manage"
+  | "master.warehouse.view"
+  | "master.warehouse.manage"
+  | "master.bom.view"
+  | "master.bom.manage"
+  | "so.view"
+  | "so.create"
+  | "so.update"
+  | "so.confirm"
+  | "so.cancel";
 
 /** Matriks izin: permission → role yang boleh. */
 export const PERMISSION_MATRIX: Record<Permission, readonly RoleCode[]> = {
@@ -103,6 +122,25 @@ export const PERMISSION_MATRIX: Record<Permission, readonly RoleCode[]> = {
   "buyer.create": ["ADMIN", "MANAGER", "SALES"],
   "buyer.update": ["ADMIN", "MANAGER", "SALES"],
   "buyer.deactivate": ["ADMIN", "MANAGER", "SALES"],
+  "master.organization.view": ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
+  "master.organization.manage": ["ADMIN", "MANAGER"],
+  "master.supplier.view": ["ADMIN", "MANAGER", "PURCHASING"],
+  "master.supplier.manage": ["ADMIN", "MANAGER", "PURCHASING"],
+  "master.uom.view": ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE"],
+  "master.uom.manage": ["ADMIN", "MANAGER"],
+  "master.material.view": ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE"],
+  "master.material.manage": ["ADMIN", "MANAGER"],
+  "master.product.view": ["ADMIN", "MANAGER", "SALES", "PRODUCTION_SUPERVISOR"],
+  "master.product.manage": ["ADMIN", "MANAGER"],
+  "master.warehouse.view": ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE"],
+  "master.warehouse.manage": ["ADMIN", "MANAGER"],
+  "master.bom.view": ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
+  "master.bom.manage": ["ADMIN", "MANAGER"],
+  "so.view": ROLE_CODES,
+  "so.create": ["ADMIN", "MANAGER", "SALES"],
+  "so.update": ["ADMIN", "MANAGER", "SALES"],
+  "so.confirm": ["ADMIN", "MANAGER", "SALES"],
+  "so.cancel": ["ADMIN", "MANAGER", "SALES"],
 };
 
 export function can(roles: readonly RoleCode[], permission: Permission): boolean {

@@ -125,16 +125,16 @@ Estimasi PRD (4–6 minggu) tetap relevan bila item bertanda *(opsional)* dilewa
 
 ### Tasks
 
-- [ ] 2.1 Master data organisasi: `departments`, `employees` (dasar: kode, nama, departemen, jabatan, status), `production_lines` — CRUD pola referensi.
-- [ ] 2.2 `suppliers` CRUD; `units_of_measure` CRUD; `materials` CRUD (satuan, `minimum_stock`).
-- [ ] 2.3 `products` + `product_variants` CRUD (size/color, SKU unik per varian).
-- [ ] 2.4 `warehouses` + `warehouse_locations` CRUD (UNIQUE (warehouse, code)).
-- [ ] 2.5 Guard master data: nonaktifkan (`is_active`) alih-alih hapus bila sudah dipakai transaksi; validasi di service + tes.
-- [ ] 2.6 BOM: `bills_of_materials` + `bom_items`; editor per varian; versi baru + aktivasi; UNIQUE (variant, version) & (bom, material); siapkan aturan "BOM terpakai SPK tidak dapat diubah" (aktif di Fase 4).
-- [ ] 2.7 Sales Order: modul sales — create DRAFT multi-item (varian, qty > 0, harga ≥ 0, due date), edit draft; penomoran `SO-YYYYMM-####`; transisi DRAFT → CONFIRMED; cancel bersyarat + alasan; list/detail/filter/search; query saldo pesanan (terpesan, terkirim, sisa).
-- [ ] 2.8 RBAC tiap layar & aksi sesuai matriks (Sales: buyer + SO; Purchasing: supplier; Admin/Manager: master data; role lain read-only bila diizinkan).
-- [ ] 2.9 Dashboard ringan: kartu SO aktif & mendekati tenggat dari data nyata (diperluas penuh di Fase 5).
-- [ ] 2.10 Tes: unit (transisi status SO, penomoran, guard nonaktif/hapus), integration (guard confirm, nonaktifkan data terpakai), e2e (buat SO → confirm).
+- [x] 2.1 Master data organisasi: `departments`, `employees` (dasar: kode, nama, departemen, jabatan, status), `production_lines` — CRUD pola referensi.
+- [x] 2.2 `suppliers` CRUD; `units_of_measure` CRUD; `materials` CRUD (satuan, `minimum_stock`).
+- [x] 2.3 `products` + `product_variants` CRUD (size/color, SKU unik per varian).
+- [x] 2.4 `warehouses` + `warehouse_locations` CRUD (UNIQUE (warehouse, code)).
+- [x] 2.5 Guard master data: nonaktifkan (`is_active`) alih-alih hapus bila sudah dipakai transaksi; validasi di service + tes. — ✅ 19 Okt 2026: departemen↔karyawan aktif, satuan↔material aktif, material↔BOM aktif, produk/varian↔BOM aktif & SO terbuka, buyer↔SO aktif, gudang↔lokasi aktif; semuanya diuji integration.
+- [x] 2.6 BOM: `bills_of_materials` + `bom_items`; editor per varian; versi baru + aktivasi; UNIQUE (variant, version) & (bom, material); siapkan aturan "BOM terpakai SPK tidak dapat diubah" (aktif di Fase 4). — ✅ 19 Okt 2026: satu versi aktif per varian (aktivasi mengnonaktifkan versi lama + `effective_until`); BOM aktif beku — revisi lewat "versi baru" yang menyalin item; hook guard SPK ditandai di service untuk Fase 4.
+- [x] 2.7 Sales Order: modul sales — create DRAFT multi-item (varian, qty > 0, harga ≥ 0, due date), edit draft; penomoran `SO-YYYYMM-####`; transisi DRAFT → CONFIRMED; cancel bersyarat + alasan; list/detail/filter/search; query saldo pesanan (terpesan, terkirim, sisa).
+- [x] 2.8 RBAC tiap layar & aksi sesuai matriks (Sales: buyer + SO; Purchasing: supplier; Admin/Manager: master data; role lain read-only bila diizinkan).
+- [x] 2.9 Dashboard ringan: kartu SO aktif & mendekati tenggat dari data nyata (diperluas penuh di Fase 5).
+- [x] 2.10 Tes: unit (transisi status SO, penomoran, guard nonaktif/hapus), integration (guard confirm, nonaktifkan data terpakai), e2e (buat SO → confirm). — ✅ 19 Okt 2026: unit 35 (termasuk transisi status & validasi form SO), integration 23 (SO create/confirm/cancel, guard data terpakai, BOM, ringkasan dashboard), e2e SO (buat → konfirmasi → batal).
 
 ### Definisi selesai F2
 - SO lengkap bisa dibuat → diedit (draft) → dikonfirmasi → dibatalkan sesuai aturan; tidak ada transisi liar (dites).

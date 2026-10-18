@@ -1,14 +1,22 @@
 import {
   BarChart3,
   Boxes,
+  Building2,
   ClipboardCheck,
   Factory,
   FileText,
   Handshake,
   LayoutDashboard,
+  ListTree,
+  Package,
+  Route,
+  Ruler,
+  Shirt,
   ShoppingCart,
   Truck,
   Users,
+  UsersRound,
+  Warehouse,
   type LucideIcon,
 } from "lucide-react";
 import { ROLE_CODES, type RoleCode } from "@/lib/permissions";
@@ -48,7 +56,70 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: "/sales",
         icon: ShoppingCart,
         roles: ["ADMIN", "MANAGER", "SALES"],
-        phase: "F2",
+      },
+    ],
+  },
+  {
+    label: "Organisasi",
+    items: [
+      {
+        title: "Departemen",
+        href: "/master/departments",
+        icon: Building2,
+        roles: ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
+      },
+      {
+        title: "Karyawan",
+        href: "/master/employees",
+        icon: UsersRound,
+        roles: ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
+      },
+      {
+        title: "Lini Produksi",
+        href: "/master/lines",
+        icon: Route,
+        roles: ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
+      },
+    ],
+  },
+  {
+    label: "Master Data",
+    items: [
+      {
+        title: "Produk",
+        href: "/master/products",
+        icon: Shirt,
+        roles: ["ADMIN", "MANAGER", "SALES", "PRODUCTION_SUPERVISOR"],
+      },
+      {
+        title: "BOM",
+        href: "/master/bom",
+        icon: ListTree,
+        roles: ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
+      },
+      {
+        title: "Material",
+        href: "/master/materials",
+        icon: Package,
+        roles: ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE"],
+      },
+      {
+        title: "Satuan",
+        href: "/master/uoms",
+        icon: Ruler,
+        roles: ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE"],
+      },
+      {
+        title: "Supplier",
+        href: "/master/suppliers",
+        icon: Factory,
+        roles: ["ADMIN", "MANAGER", "PURCHASING"],
+      },
+      {
+        title: "Gudang",
+        href: "/master/warehouses",
+        icon: Warehouse,
+        roles: ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE"],
       },
     ],
   },
@@ -127,6 +198,16 @@ const PATH_LABELS: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/buyers": "Buyer",
   "/sales": "Sales Order",
+  "/master": "Master Data",
+  "/master/departments": "Departemen",
+  "/master/employees": "Karyawan",
+  "/master/lines": "Lini Produksi",
+  "/master/products": "Produk",
+  "/master/bom": "BOM",
+  "/master/materials": "Material",
+  "/master/uoms": "Satuan",
+  "/master/suppliers": "Supplier",
+  "/master/warehouses": "Gudang",
   "/purchasing": "Pembelian",
   "/inventory": "Inventori",
   "/production": "Produksi",
@@ -138,11 +219,21 @@ const PATH_LABELS: Record<string, string> = {
   "/akses-ditolak": "Akses Ditolak",
 };
 
+const SEGMENT_LABELS: Record<string, string> = {
+  new: "Baru",
+  edit: "Ubah",
+};
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function labelForPath(path: string): string {
   const exact = PATH_LABELS[path];
   if (exact) return exact;
   const segment = path.split("/").filter(Boolean).pop() ?? "";
-  return segment ? segment[0]!.toUpperCase() + segment.slice(1) : "";
+  if (!segment) return "";
+  if (UUID_PATTERN.test(segment)) return "Detail";
+  if (SEGMENT_LABELS[segment]) return SEGMENT_LABELS[segment];
+  return segment[0]!.toUpperCase() + segment.slice(1);
 }
 
 export type Breadcrumb = { href: string; label: string };

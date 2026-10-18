@@ -38,3 +38,19 @@ export function formatDateId(value: Date | string | number): string {
     dateStyle: "medium",
   }).format(toDate(value));
 }
+
+/** Tanggal hari ini (YYYY-MM-DD) menurut kalender Asia/Jakarta. */
+export function getTodayDate(date: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+/** Tanggal (YYYY-MM-DD) `days` hari dari sekarang menurut kalender Asia/Jakarta. */
+export function getDateOffset(days: number, from: Date = new Date()): string {
+  const shifted = new Date(from.getTime() + days * 24 * 60 * 60 * 1000);
+  return getTodayDate(shifted);
+}

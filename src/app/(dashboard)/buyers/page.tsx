@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { TablePagination } from "@/components/layout/table-pagination";
+import { ListSearch } from "@/components/master-data/list-search";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requirePagePermission } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
-import { BuyerSearch } from "@/modules/buyer/components/buyer-search";
 import { CreateBuyerButton } from "@/modules/buyer/components/buyer-form-dialog";
 import { BuyersTable } from "@/modules/buyer/components/buyers-table";
 import { listBuyersQuerySchema } from "@/modules/buyer/schemas";
@@ -66,7 +66,11 @@ async function BuyersSection({ searchParams }: BuyersPageProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <BuyerSearch status={listParams.status} />
+        <ListSearch
+          placeholder="Cari kode, nama, atau kontak..."
+          ariaLabel="Cari buyer"
+          status={listParams.status}
+        />
         {canWrite ? <CreateBuyerButton /> : null}
       </div>
       <BuyersTable buyers={items} canWrite={canWrite} />

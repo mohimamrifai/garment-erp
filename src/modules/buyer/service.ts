@@ -1,17 +1,28 @@
-import { and, asc, count, eq, ilike, or } from "drizzle-orm";
+import { and, asc, count, eq, ilike, notInArray, or } from "drizzle-orm";
 import { ApiError } from "@/lib/api/errors";
 import { recordAudit } from "@/lib/audit";
 import { db, type DbTransaction } from "@/lib/db";
-import { buyers } from "@/lib/db/schema";
+import { buyers, salesOrders } from "@/lib/db/schema";
 import { nextDocumentNumber } from "@/lib/utils/documents";
+import { nullable } from "@/lib/utils/strings";
+import { FINAL_SO_STATUSES } from "@/modules/sales-order/status";
 import type { BuyerFormInput, ListBuyersQuery, UpdateBuyerInput } from "./schemas";
 
 export type Buyer = typeof buyers.$inferSelect;
 
-/** "" / "   " → null agar kolom opsional bersih. */
-function nullable(value: string | undefined | null): string | null {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
+export type BuyerOption = {
+  id: string;
+  code: string;
+  name: string;
+};
+
+/** Opsi buyer aktif untuk dropdown transaksi (mis. sales order). */
+export async function listBuyerOptions(): Promise<BuyerOption[]> {
+  return db
+    .select({ id: buyers.id, code: buyers.code, name: buyers.name })
+    .from(buyers)
+    .where(eq(buyers.isActive, true))
+    .orderBy(asc(buyers.name));
 }
 
 export async function listBuyers(
@@ -102,6 +113,24 @@ export async function updateBuyer(
 
     if (Object.keys(updates).length === 0) {
       throw ApiError.badRequest("Tidak ada perubahan yang dikirim.");
+    }
+
+    // Guard PRD §2.5: buyer dengan sales order aktif tidak boleh dinonaktifkan.
+    if (input.isActive === false && existing.isActive) {
+      const [openOrders] = await tx
+        .select({ value: count() })
+        .from(salesOrders)
+        .where(
+          and(
+            eq(salesOrders.buyerId, buyerId),
+            notInArray(salesOrders.status, [...FINAL_SO_STATUSES]),
+          ),
+        );
+      if (Number(openOrders?.value ?? 0) > 0) {
+        throw ApiError.conflict(
+          "Buyer masih memiliki sales order aktif dan tidak dapat dinonaktifkan.",
+        );
+      }
     }
 
     const [updated] = await tx
