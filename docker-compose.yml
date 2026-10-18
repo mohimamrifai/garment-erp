@@ -1,0 +1,29 @@
+# PostgreSQL untuk development lokal.
+# Jalankan: docker compose up -d
+# Database yang dibuat otomatis oleh image:
+#   - garment_erp        (dev)
+#   - garment_erp_test   (integration/e2e test)
+# Kredensial di bawah hanya untuk lokal; JANGAN dipakai di produksi.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: garment-erp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: garment
+      POSTGRES_PASSWORD: garment
+      POSTGRES_DB: garment_erp
+    ports:
+      # Port host 5435 (5432–5434 sudah dipakai proyek lain di mesin dev ini).
+      - "5435:5432"
+    volumes:
+      - garment_pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U garment -d garment_erp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  garment_pgdata:
