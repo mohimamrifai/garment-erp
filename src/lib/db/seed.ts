@@ -1,4 +1,4 @@
-import { asc } from "drizzle-orm";
+import { asc, eq, inArray } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
@@ -7,15 +7,18 @@ import {
   buyers,
   departments,
   employees,
+  inventoryTransactions,
   materials,
   productionLines,
   productVariants,
   products,
+  purchaseOrders,
   roles,
   salesOrderItems,
   salesOrders,
   suppliers,
   unitsOfMeasure,
+  user,
   userRoles,
   warehouseLocations,
   warehouses,
@@ -24,6 +27,14 @@ import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/lib/demo-accounts";
 import { ROLE_SEED, type RoleCode } from "@/lib/permissions";
 import { getDateOffset, getTodayDate } from "@/lib/utils/dates";
 import { nextDocumentNumber } from "@/lib/utils/documents";
+import { adjustStock, transferStock } from "@/modules/inventory/service";
+import {
+  createMaterialReceipt,
+  createPurchaseOrder,
+  getPurchaseOrderDetail,
+  orderPurchaseOrder,
+  postMaterialReceipt,
+} from "@/modules/purchasing/service";
 
 const DEFAULT_PASSWORD = process.env.SEED_DEFAULT_PASSWORD ?? DEMO_PASSWORD;
 
@@ -643,8 +654,239 @@ async function seedSalesOrders(variantIds: Map<string, string>): Promise<void> {
 }
 
 /**
+ * Contoh purchase order lintas status + penerimaan (F3): draf, dipesan dengan
+ * penerimaan draf, sebagian diterima (diposting), dan diterima penuh (diposting).
+ */
+async function seedPurchasing(
+  materialIds: Map<string, string>,
+  actorUserId: string,
+): Promise<void> {
+  const existing = await db.select({ id: purchaseOrders.id }).from(purchaseOrders).limit(1);
+  if (existing.length > 0) return;
+
+  const supplierRows = await db
+    .select({ id: suppliers.id })
+    .from(suppliers)
+    .orderBy(asc(suppliers.code))
+    .limit(2);
+  const supplierA = supplierRows[0];
+  const supplierB = supplierRows[1] ?? supplierRows[0];
+  if (!supplierA || !supplierB) return;
+
+  const locationRows = await db
+    .select({ id: warehouseLocations.id, code: warehouseLocations.code })
+    .from(warehouseLocations)
+    .innerJoin(warehouses, eq(warehouseLocations.warehouseId, warehouses.id))
+    .orderBy(asc(warehouses.name), asc(warehouseLocations.code));
+  const locationByCode = new Map(locationRows.map((row) => [row.code, row.id]));
+
+  const fabricLocationId = locationByCode.get("A-01");
+  const accessoryLocationId = locationByCode.get("A-02");
+  if (!fabricLocationId || !accessoryLocationId) return;
+
+  const material = (name: string): string | undefined => materialIds.get(name);
+
+  // PO 1 — draf: belum dipesan, masih bisa diubah/dibatalkan.
+  const benangId = material("Benang Jahit Polyester");
+  const labelId = material("Label Woven Custom");
+  if (benangId && labelId) {
+    await createPurchaseOrder(
+      {
+        supplierId: supplierB.id,
+        orderDate: getDateOffset(-1),
+        expectedDate: getDateOffset(10),
+        notes: "Menunggu konfirmasi harga akhir dari supplier.",
+        items: [
+          { materialId: benangId, orderedQuantity: 24, unitPrice: 45000, notes: "" },
+          { materialId: labelId, orderedQuantity: 1000, unitPrice: 750, notes: "" },
+        ],
+      },
+      actorUserId,
+    );
+  }
+
+  // PO 2 — dipesan, barang sebagian tiba sebagai draf penerimaan (siap diposting di UI).
+  const combed24Id = material("Kain Katun Combed 24s");
+  if (combed24Id) {
+    const order = await createPurchaseOrder(
+      {
+        supplierId: supplierA.id,
+        orderDate: getDateOffset(-4),
+        expectedDate: getDateOffset(2),
+        notes: "Termin 30% DP, sisanya setelah barang diterima.",
+        items: [{ materialId: combed24Id, orderedQuantity: 150, unitPrice: 92000, notes: "" }],
+      },
+      actorUserId,
+    );
+    await orderPurchaseOrder(order.id, actorUserId);
+
+    const detail = await getPurchaseOrderDetail(order.id);
+    const item = detail.items[0];
+    if (item) {
+      await createMaterialReceipt(
+        {
+          purchaseOrderId: order.id,
+          receivedAt: getTodayDate(),
+          locationId: fabricLocationId,
+          notes: "Surat jalan GJ-2214 — sebagian barang tiba lebih awal.",
+          items: [
+            {
+              purchaseOrderItemId: item.id,
+              receivedQuantity: 90,
+              acceptedQuantity: 80,
+              notes: "10 kg warna tidak sesuai pesanan.",
+            },
+          ],
+        },
+        actorUserId,
+      );
+    }
+  }
+
+  // PO 3 — sebagian diterima: penerimaan sudah diposting sehingga stok bertambah.
+  const combed30Id = material("Kain Katun Combed 30s");
+  if (combed30Id) {
+    const order = await createPurchaseOrder(
+      {
+        supplierId: supplierA.id,
+        orderDate: getDateOffset(-8),
+        expectedDate: getDateOffset(-2),
+        notes: "Prioritas produksi kaos polo.",
+        items: [{ materialId: combed30Id, orderedQuantity: 200, unitPrice: 88000, notes: "" }],
+      },
+      actorUserId,
+    );
+    await orderPurchaseOrder(order.id, actorUserId);
+
+    const detail = await getPurchaseOrderDetail(order.id);
+    const item = detail.items[0];
+    if (item) {
+      const receipt = await createMaterialReceipt(
+        {
+          purchaseOrderId: order.id,
+          receivedAt: getDateOffset(-2),
+          locationId: fabricLocationId,
+          notes: "Kirim tahap 1 dari 2.",
+          items: [
+            {
+              purchaseOrderItemId: item.id,
+              receivedQuantity: 120,
+              acceptedQuantity: 120,
+              notes: "",
+            },
+          ],
+        },
+        actorUserId,
+      );
+      await postMaterialReceipt(receipt.id, actorUserId);
+    }
+  }
+
+  // PO 4 — diterima penuh dan sudah diposting: siklus PO selesai.
+  const benangFullId = material("Benang Jahit Polyester");
+  const kancingId = material("Kancing Plastik 18L");
+  if (benangFullId && kancingId) {
+    const order = await createPurchaseOrder(
+      {
+        supplierId: supplierB.id,
+        orderDate: getDateOffset(-12),
+        expectedDate: getDateOffset(-6),
+        notes: "Restock bulanan aksesori.",
+        items: [
+          { materialId: benangFullId, orderedQuantity: 40, unitPrice: 45000, notes: "" },
+          { materialId: kancingId, orderedQuantity: 40, unitPrice: 9500, notes: "" },
+        ],
+      },
+      actorUserId,
+    );
+    await orderPurchaseOrder(order.id, actorUserId);
+
+    const detail = await getPurchaseOrderDetail(order.id);
+    const items = detail.items
+      .filter((item) => Number(item.remainingQuantity) > 0)
+      .map((item) => ({
+        purchaseOrderItemId: item.id,
+        receivedQuantity: Number(item.remainingQuantity),
+        acceptedQuantity: Number(item.remainingQuantity),
+        notes: "",
+      }));
+    if (items.length > 0) {
+      const receipt = await createMaterialReceipt(
+        {
+          purchaseOrderId: order.id,
+          receivedAt: getDateOffset(-5),
+          locationId: accessoryLocationId,
+          notes: "Barang diterima lengkap.",
+          items,
+        },
+        actorUserId,
+      );
+      await postMaterialReceipt(receipt.id, actorUserId);
+    }
+  }
+}
+
+/**
+ * Contoh operasi stok manual (F3): transfer antar lokasi dan penyesuaian opname.
+ * Dijalankan lewat service agar saldo dan audit konsisten dengan aplikasi.
+ */
+async function seedInventoryOperations(actorUserId: string): Promise<void> {
+  const existing = await db
+    .select({ id: inventoryTransactions.id })
+    .from(inventoryTransactions)
+    .where(inArray(inventoryTransactions.referenceType, ["manual-transfer", "manual-adjustment"]))
+    .limit(1);
+  if (existing.length > 0) return;
+
+  const materialRows = await db.select({ id: materials.id, name: materials.name }).from(materials);
+  const materialByName = new Map(materialRows.map((row) => [row.name, row.id]));
+
+  const locationRows = await db
+    .select({ id: warehouseLocations.id, code: warehouseLocations.code })
+    .from(warehouseLocations);
+  const locationByCode = new Map(locationRows.map((row) => [row.code, row.id]));
+
+  const combed30Id = materialByName.get("Kain Katun Combed 30s");
+  const fabricLocationId = locationByCode.get("A-01");
+  const accessoryLocationId = locationByCode.get("A-02");
+  if (combed30Id && fabricLocationId && accessoryLocationId) {
+    await transferStock(
+      {
+        itemType: "MATERIAL",
+        materialId: combed30Id,
+        variantId: "",
+        fromLocationId: fabricLocationId,
+        toLocationId: accessoryLocationId,
+        quantity: 30,
+        notes: "Pemindahan kain untuk jadwal potong minggu ini.",
+      },
+      actorUserId,
+    );
+  }
+
+  const kancingId = materialByName.get("Kancing Plastik 18L");
+  const kancingLocationId = locationByCode.get("C-01");
+  if (kancingId && kancingLocationId) {
+    await adjustStock(
+      {
+        direction: "IN",
+        itemType: "MATERIAL",
+        materialId: kancingId,
+        variantId: "",
+        locationId: kancingLocationId,
+        quantity: 5,
+        reason: "Hasil opname mingguan — selisih lebih 5 lusin.",
+        notes: "",
+      },
+      actorUserId,
+    );
+  }
+}
+
+/**
  * Seed idempotent untuk development: role, akun demo, buyer, master data
- * organisasi & produk, gudang, BOM contoh, dan sales order lintas status.
+ * organisasi & produk, gudang, BOM contoh, sales order, purchase order,
+ * penerimaan, serta operasi stok contoh (F1–F3).
  */
 export async function runSeed(): Promise<void> {
   console.log("Seed: roles...");
@@ -678,5 +920,19 @@ export async function runSeed(): Promise<void> {
   await seedSalesOrders(variantIds);
 
   const adminEmail = SEED_USERS.find((u) => u.roleCode === "ADMIN")!.email;
+  const [adminRow] = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.email, adminEmail))
+    .limit(1);
+
+  if (adminRow) {
+    console.log("Seed: purchase order & penerimaan contoh...");
+    await seedPurchasing(materialIds, adminRow.id);
+
+    console.log("Seed: operasi stok contoh (transfer & penyesuaian)...");
+    await seedInventoryOperations(adminRow.id);
+  }
+
   console.log(`Seed selesai. Akun admin: ${adminEmail} (password: ${DEFAULT_PASSWORD}).`);
 }

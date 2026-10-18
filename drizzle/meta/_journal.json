@@ -15,6 +15,13 @@
       "when": 1792352951999,
       "tag": "0001_yielding_miss_america",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792357350036,
+      "tag": "0002_round_ultimatum",
+      "breakpoints": true
     }
   ]
 }

@@ -42,6 +42,17 @@ export async function listSuppliers(
   return { items, total: Number(totalRow?.value ?? 0) };
 }
 
+/** Opsi supplier aktif untuk dropdown purchase order (Fase 3+). */
+export type SupplierOption = { id: string; code: string; name: string };
+
+export async function listSupplierOptions(): Promise<SupplierOption[]> {
+  return db
+    .select({ id: suppliers.id, code: suppliers.code, name: suppliers.name })
+    .from(suppliers)
+    .where(eq(suppliers.isActive, true))
+    .orderBy(asc(suppliers.code));
+}
+
 async function getSupplierRow(tx: DbTransaction, supplierId: string): Promise<Supplier> {
   const [row] = await tx.select().from(suppliers).where(eq(suppliers.id, supplierId)).limit(1);
   if (!row) throw ApiError.notFound("Supplier tidak ditemukan.");

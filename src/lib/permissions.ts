@@ -107,7 +107,20 @@ export type Permission =
   | "so.create"
   | "so.update"
   | "so.confirm"
-  | "so.cancel";
+  | "so.cancel"
+  | "po.view"
+  | "po.create"
+  | "po.update"
+  | "po.order"
+  | "po.cancel"
+  | "receipt.view"
+  | "receipt.create"
+  | "receipt.update"
+  | "receipt.post"
+  | "receipt.cancel"
+  | "inventory.view"
+  | "inventory.move"
+  | "inventory.adjust";
 
 /** Matriks izin: permission → role yang boleh. */
 export const PERMISSION_MATRIX: Record<Permission, readonly RoleCode[]> = {
@@ -141,6 +154,19 @@ export const PERMISSION_MATRIX: Record<Permission, readonly RoleCode[]> = {
   "so.update": ["ADMIN", "MANAGER", "SALES"],
   "so.confirm": ["ADMIN", "MANAGER", "SALES"],
   "so.cancel": ["ADMIN", "MANAGER", "SALES"],
+  "po.view": ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE"],
+  "po.create": ["ADMIN", "MANAGER", "PURCHASING"],
+  "po.update": ["ADMIN", "MANAGER", "PURCHASING"],
+  "po.order": ["ADMIN", "MANAGER", "PURCHASING"],
+  "po.cancel": ["ADMIN", "MANAGER", "PURCHASING"],
+  "receipt.view": ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE"],
+  "receipt.create": ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE"],
+  "receipt.update": ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE"],
+  "receipt.post": ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE"],
+  "receipt.cancel": ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE"],
+  "inventory.view": ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE", "PRODUCTION_SUPERVISOR"],
+  "inventory.move": ["ADMIN", "MANAGER", "WAREHOUSE"],
+  "inventory.adjust": ["ADMIN", "MANAGER", "WAREHOUSE"],
 };
 
 export function can(roles: readonly RoleCode[], permission: Permission): boolean {

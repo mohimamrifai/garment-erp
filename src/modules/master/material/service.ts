@@ -61,10 +61,15 @@ export async function listMaterials(
   return { items, total: Number(totalRow?.value ?? 0) };
 }
 
+export type MaterialOption = {
+  id: string;
+  code: string;
+  name: string;
+  unitCode: string;
+};
+
 /** Opsi material aktif untuk editor BOM (Fase 2) dan purchase order (Fase 3). */
-export async function listMaterialOptions(): Promise<
-  { id: string; code: string; name: string; unitCode: string }[]
-> {
+export async function listMaterialOptions(): Promise<MaterialOption[]> {
   return db
     .select({
       id: materials.id,

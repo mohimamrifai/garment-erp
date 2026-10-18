@@ -93,6 +93,30 @@ export async function listWarehouseOptions(): Promise<{ id: string; code: string
     .orderBy(asc(warehouses.name));
 }
 
+/** Opsi lokasi aktif (beserta gudangnya) untuk dropdown transaksi stok (Fase 3+). */
+export type LocationOption = {
+  id: string;
+  code: string;
+  name: string;
+  warehouseId: string;
+  warehouseName: string;
+};
+
+export async function listLocationOptions(): Promise<LocationOption[]> {
+  return db
+    .select({
+      id: warehouseLocations.id,
+      code: warehouseLocations.code,
+      name: warehouseLocations.name,
+      warehouseId: warehouses.id,
+      warehouseName: warehouses.name,
+    })
+    .from(warehouseLocations)
+    .innerJoin(warehouses, eq(warehouseLocations.warehouseId, warehouses.id))
+    .where(and(eq(warehouseLocations.isActive, true), eq(warehouses.isActive, true)))
+    .orderBy(asc(warehouses.name), asc(warehouseLocations.code));
+}
+
 function normalizeLocationCode(code: string): string {
   return code.trim().toUpperCase();
 }

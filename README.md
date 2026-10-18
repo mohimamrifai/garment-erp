@@ -21,8 +21,8 @@ Postgres (Singapore); database produksi di-seed dengan data contoh yang sama sep
 | ---- | -------------------------------------------------------- | ---------- |
 | F1   | Fondasi: auth, RBAC, audit, master data buyer, dashboard | ✅ Selesai |
 | F2   | Master data lengkap + BOM + Sales Order                  | ✅ Selesai |
-| F3   | Purchasing, penerimaan material, inventory engine        | ⏳ Berikut |
-| F4   | Produksi (SPK), QC                                       | ⏳ Rencana |
+| F3   | Purchasing, penerimaan material, inventory engine        | ✅ Selesai |
+| F4   | Produksi (SPK), QC                                       | ⏳ Berikut |
 | F5   | Pengiriman, laporan                                      | ⏳ Rencana |
 | F6   | Polish, dokumentasi, deploy demo                         | ⏳ Rencana |
 
@@ -32,6 +32,11 @@ Postgres (Singapore); database produksi di-seed dengan data contoh yang sama sep
 > satuan, material, produk + varian, gudang + lokasi), **BOM berversi** (versi aktif
 > beku — revisi lewat versi baru), dan modul **Sales Order** (draf → konfirmasi →
 > pembatalan beralasan, penomoran `SO-YYYYMM-####`).
+> F3 mencakup **inventory engine** (satu-satunya jalur perubahan saldo: transaksi
+> immutable, idempotent, aman konkurensi), **Purchase Order**
+> (`PO-YYYYMM-####`: draf → dipesan → diterima sebagian/lengkap, batal bersyarat),
+> **Penerimaan Material** (`RCV-YYYYMM-####`: draf → diposting, lokasi per dokumen),
+> serta operasi **transfer** (`TRX-YYYYMM-####`) dan **penyesuaian stok** beralasan.
 
 ## Stack
 
@@ -109,13 +114,16 @@ Pada deployment non-demo (variabel tidak diisi), tombol disembunyikan.
 ## Testing
 
 - **Unit** — logika murni: matriks izin, format tanggal/periode dokumen Jakarta, skema Zod,
-  transisi status sales order.
+  transisi status sales order, purchase order, serta aritmetika & aturan inventory engine.
 - **Integration** — service + PostgreSQL nyata (`garment_erp_test`, di-reset otomatis per file),
   termasuk penomoran dokumen atomik saat 10 transaksi paralel, siklus SO (buat → konfirmasi →
-  batal), guard nonaktif master data terpakai, dan versi BOM.
+  batal), guard nonaktif master data terpakai, versi BOM, siklus PO (pesan → terima sebagian →
+  terima lengkap), posting penerimaan via engine (idempotent, anti over-receipt), transfer
+  atomik dua sisi, penyesuaian beralasan, dan backstop CHECK database untuk saldo.
 - **E2E Playwright** — alur nyata di browser: login, logout, penyaringan menu per role, penolakan
-  akses halaman admin, vertical slice buyer (buat, cari, nonaktifkan), dan sales order
-  (buat draf → konfirmasi → batalkan).
+  akses halaman admin, vertical slice buyer (buat, cari, nonaktifkan), sales order
+  (buat draf → konfirmasi → batalkan), purchasing (PO → pesan → terima → posting stok),
+  dan operasi gudang (transfer + penyesuaian stok).
 
 E2E berjalan terhadap **build produksi** (`next start`), bukan dev server, agar stabil:
 
@@ -144,6 +152,8 @@ src/
     buyer/  user/      # F1: master data buyer & manajemen pengguna
     master/            # F2: organisasi, supplier, satuan, material, produk, gudang, BOM
     sales-order/       # F2: sales order + status & transisinya
+    purchasing/        # F3: purchase order, penerimaan material
+    inventory/         # F3: inventory engine, saldo, mutasi, transfer, penyesuaian
   lib/
     auth/              # konfigurasi Better Auth, DAL sesi, guard API
     db/                # koneksi Drizzle + schema + seed
@@ -168,7 +178,9 @@ docs/                  # plan.md (rencana bertahap), design-system.md
 - Penomoran dokumen atomik via tabel `document_sequences`
   (`SO-/PO-/RCV-/SPK-/SJ-YYYYMM-####` mengikuti kalender Asia/Jakarta; buyer memakai counter global
   `BUY-0001`).
-- Semua perubahan saldo stok nantinya wajib melalui inventory engine (Fase 3).
+- Semua perubahan saldo stok **wajib** melalui inventory engine (`src/modules/inventory/engine.ts`):
+  transaksi immutable + saldo diperbarui dalam satu transaksi DB, dengan kunci idempotensi
+  untuk endpoint posting.
 - Bahasa visual mengikuti `docs/design-system.md`: token di `src/app/globals.css` (jangan
   menulis warna literal), angka/kode selalu `font-mono` + tabular, satu aksen oranye untuk
   fokus/nav aktif, sidebar selalu graphite gelap di kedua mode tema.
