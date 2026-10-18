@@ -236,7 +236,10 @@ export function labelForPath(path: string): string {
   return segment[0]!.toUpperCase() + segment.slice(1);
 }
 
-export type Breadcrumb = { href: string; label: string };
+export type Breadcrumb = { href?: string; label: string };
+
+/** Path yang hanya berfungsi sebagai label grup (tidak punya halaman sendiri). */
+const NON_PAGE_PATHS = new Set(["/master", "/settings"]);
 
 /** Pecah pathname menjadi breadcrumb, mis. /settings/users → Pengaturan / Pengguna. */
 export function breadcrumbsForPath(pathname: string): Breadcrumb[] {
@@ -244,7 +247,10 @@ export function breadcrumbsForPath(pathname: string): Breadcrumb[] {
   let current = "";
   for (const segment of pathname.split("/").filter(Boolean)) {
     current += `/${segment}`;
-    crumbs.push({ href: current, label: labelForPath(current) });
+    crumbs.push({
+      href: NON_PAGE_PATHS.has(current) ? undefined : current,
+      label: labelForPath(current),
+    });
   }
   return crumbs;
 }

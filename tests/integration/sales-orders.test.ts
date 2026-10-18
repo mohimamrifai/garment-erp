@@ -308,6 +308,7 @@ describe("service sales order (integrasi DB)", () => {
       ),
       TEST_ACTOR_ID,
     );
+    expect(soon.status).toBe("DRAFT");
 
     const summary = await getDashboardSoSummary();
     expect(summary.activeCount).toBeGreaterThanOrEqual(2);

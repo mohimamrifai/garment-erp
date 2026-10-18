@@ -68,13 +68,15 @@ export function AppHeader({ user }: { user: SessionUserView }) {
             <BreadcrumbLink render={<Link href="/dashboard" />}>Garment ERP</BreadcrumbLink>
           </BreadcrumbItem>
           {crumbs.map((crumb, index) => (
-            <Fragment key={crumb.href}>
+            <Fragment key={`${index}-${crumb.label}`}>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 {index === crumbs.length - 1 ? (
                   <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                ) : (
+                ) : crumb.href ? (
                   <BreadcrumbLink render={<Link href={crumb.href} />}>{crumb.label}</BreadcrumbLink>
+                ) : (
+                  <span className="text-muted-foreground">{crumb.label}</span>
                 )}
               </BreadcrumbItem>
             </Fragment>
