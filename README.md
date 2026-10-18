@@ -83,6 +83,10 @@ Semua akun memakai password `password123` (dibuat oleh `pnpm db:seed`).
 RBAC menerapkan satu user bisa memiliki banyak role; role `ADMIN` adalah satu-satunya yang dapat
 mengelola pengguna dan melihat audit log.
 
+Pada deployment demo (`NEXT_PUBLIC_DEMO_MODE=1`, mis. versi Vercel proyek ini) halaman login
+menampilkan tombol **masuk cepat** per role — satu klik untuk masuk tanpa mengetik kredensial.
+Pada deployment non-demo (variabel tidak diisi), tombol disembunyikan.
+
 ## Skrip
 
 | Skrip                                                      | Fungsi                                           |

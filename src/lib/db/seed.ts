@@ -1,32 +1,14 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { buyers, roles, userRoles } from "@/lib/db/schema";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/lib/demo-accounts";
 import { ROLE_SEED, type RoleCode } from "@/lib/permissions";
 import { nextDocumentNumber } from "@/lib/utils/documents";
 
-const DEFAULT_PASSWORD = process.env.SEED_DEFAULT_PASSWORD ?? "password123";
+const DEFAULT_PASSWORD = process.env.SEED_DEFAULT_PASSWORD ?? DEMO_PASSWORD;
 
-type SeedUser = {
-  email: string;
-  name: string;
-  roleCode: RoleCode;
-};
-
-/** Satu akun demo per role (dokumentasikan di README). */
-const SEED_USERS: readonly SeedUser[] = [
-  { email: "admin@garment.local", name: "Administrator", roleCode: "ADMIN" },
-  { email: "manager@garment.local", name: "Manager", roleCode: "MANAGER" },
-  { email: "sales@garment.local", name: "Sales", roleCode: "SALES" },
-  { email: "purchasing@garment.local", name: "Purchasing", roleCode: "PURCHASING" },
-  { email: "warehouse@garment.local", name: "Gudang", roleCode: "WAREHOUSE" },
-  {
-    email: "produksi@garment.local",
-    name: "Supervisor Produksi",
-    roleCode: "PRODUCTION_SUPERVISOR",
-  },
-  { email: "qc@garment.local", name: "Staff QC", roleCode: "QC_STAFF" },
-  { email: "shipping@garment.local", name: "Staff Pengiriman", roleCode: "SHIPPING_STAFF" },
-];
+/** Satu akun demo per role (sumber: src/lib/demo-accounts.ts). */
+const SEED_USERS = DEMO_ACCOUNTS;
 
 const SAMPLE_BUYERS: readonly {
   name: string;

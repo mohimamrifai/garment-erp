@@ -44,6 +44,18 @@ test.describe("autentikasi", () => {
     await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/login/);
   });
+
+  test("tombol masuk cepat akun demo langsung membuka dashboard", async ({ page }) => {
+    await page.goto("/login");
+    const demoButton = page.getByRole("button", { name: /^Sales / });
+    if ((await demoButton.count()) === 0) {
+      test.skip(true, "NEXT_PUBLIC_DEMO_MODE tidak aktif pada build ini");
+    }
+    await demoButton.click();
+    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page.getByText(/Selamat datang/)).toBeVisible();
+    await expect(page.getByRole("link", { name: "Buyer", exact: true })).toBeVisible();
+  });
 });
 
 test.describe("otorisasi berbasis role", () => {
