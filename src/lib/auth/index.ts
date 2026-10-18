@@ -16,6 +16,9 @@ import * as schema from "@/lib/db/schema";
  */
 export const auth = betterAuth({
   appName: "Garment ERP",
+  // Rate limit Better Auth aktif di produksi (mis. /sign-in: 3 percobaan / 10 detik).
+  // Tes E2E melakukan banyak login cepat dari satu IP — dimatikan lewat env khusus.
+  ...(process.env.E2E_DISABLE_RATE_LIMIT === "1" ? { rateLimit: { enabled: false } } : {}),
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,

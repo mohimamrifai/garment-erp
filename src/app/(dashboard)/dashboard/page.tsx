@@ -88,13 +88,23 @@ async function WelcomeCard() {
         </div>
         <div className="flex flex-wrap gap-2">
           {can(user.roles, "buyer.view") ? (
-            <Button variant="outline" size="sm" render={<Link href="/buyers" />}>
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link href="/buyers" />}
+            >
               <Handshake data-icon="inline-start" />
               Kelola Buyer
             </Button>
           ) : null}
           {can(user.roles, "user.view") ? (
-            <Button variant="outline" size="sm" render={<Link href="/settings/users" />}>
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link href="/settings/users" />}
+            >
               <Users data-icon="inline-start" />
               Manajemen Pengguna
             </Button>

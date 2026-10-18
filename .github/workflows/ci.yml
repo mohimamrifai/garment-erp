@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    name: Lint, Typecheck, Unit, Integration, Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: garment
+          POSTGRES_PASSWORD: garment
+          POSTGRES_DB: garment_erp_test
+        ports:
+          - 5435:5432
+        options: >-
+          --health-cmd "pg_isready -U garment"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://garment:garment@localhost:5435/garment_erp_test
+      DATABASE_URL_TEST: postgresql://garment:garment@localhost:5435/garment_erp_test
+      BETTER_AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only
+      BETTER_AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test:unit
+
+      - name: Integration tests
+        run: pnpm test:integration
+
+      - name: Build
+        run: pnpm build
+
+  # E2E tidak dijalankan di CI karena butuh seed database + browser.
+  # Jalankan lokal: `pnpm db:migrate && pnpm db:seed && pnpm build && pnpm test:e2e`.

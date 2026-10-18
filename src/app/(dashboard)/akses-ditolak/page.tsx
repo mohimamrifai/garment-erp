@@ -21,7 +21,9 @@ export default function AccessDeniedPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <Button render={<Link href="/dashboard" />}>Kembali ke Dashboard</Button>
+          <Button nativeButton={false} render={<Link href="/dashboard" />}>
+            Kembali ke Dashboard
+          </Button>
         </CardContent>
       </Card>
     </div>
