@@ -27,7 +27,7 @@ jobs:
           --health-retries 10
 
     env:
-      DATABASE_URL: postgresql://garment:garment@localhost:5435/garment_erp_test
+      DATABASE_URL: postgresql://garment:garment@localhost:5435/garment_erp
       DATABASE_URL_TEST: postgresql://garment:garment@localhost:5435/garment_erp_test
       BETTER_AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only
       BETTER_AUTH_URL: http://localhost:3000
@@ -45,6 +45,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Create dev database
+        run: >-
+          PGPASSWORD=garment psql -h localhost -p 5435 -U garment -d postgres
+          -c "CREATE DATABASE garment_erp"
 
       - name: Lint
         run: pnpm lint

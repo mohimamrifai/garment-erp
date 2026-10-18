@@ -1,5 +1,7 @@
 # Garment ERP System
 
+[![CI](https://github.com/mohimamrifai/garment-erp/actions/workflows/ci.yml/badge.svg)](https://github.com/mohimamrifai/garment-erp/actions/workflows/ci.yml)
+
 Aplikasi web ERP (Enterprise Resource Planning) untuk industri manufaktur garmen: mengelola alur
 **Sales Order → Material Planning → Purchasing → Material Receipt → Production → QC → Finished Goods → Shipment → Reporting**
 dalam satu sumber data terpusat dengan kontrol akses berbasis role.
