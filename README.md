@@ -7,6 +7,12 @@ dalam satu sumber data terpusat dengan kontrol akses berbasis role.
 Proyek ini dibangun sebagai portofolio full-stack dengan MVP 11 modul P0. Kebutuhan lengkap ada di
 [`PRD.md`](./PRD.md), rencana pengerjaan bertahap ada di [`docs/plan.md`](./docs/plan.md).
 
+## Demo
+
+🔗 **[garment-erp-olive.vercel.app](https://garment-erp-olive.vercel.app)** — masuk memakai akun demo
+di bawah (mis. `admin@garment.local` / `password123`). Deploy di Vercel (region `sin1`) + Neon
+Postgres (Singapore); database produksi di-seed dengan data contoh yang sama seperti `pnpm db:seed`.
+
 ## Status
 
 | Fase | Lingkup                                                  | Status     |
