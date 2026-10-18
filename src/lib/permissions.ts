@@ -109,3 +109,8 @@ export function can(roles: readonly RoleCode[], permission: Permission): boolean
   const allowed = PERMISSION_MATRIX[permission];
   return allowed.some((role) => roles.includes(role));
 }
+
+/** Nama tampilan role dalam Bahasa Indonesia. */
+export function roleLabel(code: RoleCode): string {
+  return ROLE_SEED.find((role) => role.code === code)?.name ?? code;
+}
