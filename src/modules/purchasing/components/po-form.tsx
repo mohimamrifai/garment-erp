@@ -32,6 +32,8 @@ type PurchaseOrderFormProps = {
   materials: MaterialOption[];
   purchaseOrderId?: string;
   initial?: PurchaseOrderFormInput;
+  /** Info banner di atas form, mis. prefill dari kekurangan material SPK. */
+  notice?: string;
 };
 
 const emptyItem: PurchaseOrderFormInput["items"][number] = {
@@ -179,6 +181,7 @@ export function PurchaseOrderForm({
   materials,
   purchaseOrderId,
   initial,
+  notice,
 }: PurchaseOrderFormProps) {
   const router = useRouter();
 
@@ -252,6 +255,9 @@ export function PurchaseOrderForm({
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
       {errors.root ? <p className="text-sm text-destructive">{errors.root.message}</p> : null}
+      {notice ? (
+        <p className="rounded-lg border border-brand/40 bg-brand/5 p-3 text-[13px]">{notice}</p>
+      ) : null}
 
       <section className="flex flex-col gap-4 rounded-lg border bg-card p-4">
         <h2 className="font-mono text-[11px] tracking-widest text-muted-foreground uppercase">

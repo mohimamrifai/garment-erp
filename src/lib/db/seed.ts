@@ -10,6 +10,7 @@ import {
   inventoryTransactions,
   materials,
   productionLines,
+  productionOrders,
   productVariants,
   products,
   purchaseOrders,
@@ -35,6 +36,14 @@ import {
   orderPurchaseOrder,
   postMaterialReceipt,
 } from "@/modules/purchasing/service";
+import {
+  createProductionOrder,
+  getProductionOrderDetail,
+  issueMaterials,
+  listProducibleSalesOrderItems,
+  recordStageOutput,
+} from "@/modules/production/service";
+import { createQcInspection } from "@/modules/qc/service";
 
 const DEFAULT_PASSWORD = process.env.SEED_DEFAULT_PASSWORD ?? DEMO_PASSWORD;
 
@@ -884,9 +893,288 @@ async function seedInventoryOperations(actorUserId: string): Promise<void> {
 }
 
 /**
+ * Contoh produksi & QC (F4). Lewat service agar aturan produksi ditegakkan:
+ * stok bahan hoodie ditambah lewat PO + penerimaan diposting, lalu dibuat tiga
+ * SPK — satu selesai penuh (termasuk alur rework), satu sedang berjalan,
+ * dan satu kekurangan material dengan alasan tetap dijalankan.
+ */
+async function seedProduction(
+  materialIds: Map<string, string>,
+  actorUserId: string,
+): Promise<void> {
+  const existing = await db.select({ id: productionOrders.id }).from(productionOrders).limit(1);
+  if (existing.length > 0) return;
+
+  const [line] = await db
+    .select()
+    .from(productionLines)
+    .where(eq(productionLines.isActive, true))
+    .orderBy(asc(productionLines.name))
+    .limit(1);
+  if (!line) return;
+
+  const locationRows = await db
+    .select({ id: warehouseLocations.id, code: warehouseLocations.code })
+    .from(warehouseLocations)
+    .innerJoin(warehouses, eq(warehouseLocations.warehouseId, warehouses.id))
+    .orderBy(asc(warehouses.name), asc(warehouseLocations.code));
+  const locationByCode = new Map(locationRows.map((row) => [row.code, row.id]));
+  const fabricLocationId = locationByCode.get("A-01");
+  if (!fabricLocationId) return;
+
+  const [supplier] = await db
+    .select({ id: suppliers.id })
+    .from(suppliers)
+    .orderBy(asc(suppliers.code))
+    .limit(1);
+
+  const fleeceId = materialIds.get("Kain Fleece Cotton");
+  const threadId = materialIds.get("Benang Jahit Polyester");
+  const zipperId = materialIds.get("Resleting YKK 20 cm");
+  const labelId = materialIds.get("Label Woven Custom");
+  const packagingId = materialIds.get("Packaging Plastik 30x40");
+
+  // Stok bahan hoodie (PO + penerimaan penuh) supaya SPK contoh lolos gate material.
+  if (supplier && fleeceId && threadId && zipperId && labelId && packagingId) {
+    const order = await createPurchaseOrder(
+      {
+        supplierId: supplier.id,
+        orderDate: getDateOffset(-6),
+        expectedDate: getDateOffset(-3),
+        notes: "Restock bahan hoodie untuk SPK contoh.",
+        items: [
+          { materialId: fleeceId, orderedQuantity: 60, unitPrice: 78000, notes: "" },
+          { materialId: threadId, orderedQuantity: 30, unitPrice: 45000, notes: "" },
+          { materialId: zipperId, orderedQuantity: 120, unitPrice: 6500, notes: "" },
+          { materialId: labelId, orderedQuantity: 200, unitPrice: 750, notes: "" },
+          { materialId: packagingId, orderedQuantity: 200, unitPrice: 1200, notes: "" },
+        ],
+      },
+      actorUserId,
+    );
+    await orderPurchaseOrder(order.id, actorUserId);
+
+    const detail = await getPurchaseOrderDetail(order.id);
+    const receipt = await createMaterialReceipt(
+      {
+        purchaseOrderId: order.id,
+        receivedAt: getDateOffset(-3),
+        locationId: fabricLocationId,
+        notes: "Barang diterima lengkap.",
+        items: detail.items.map((item) => ({
+          purchaseOrderItemId: item.id,
+          receivedQuantity: Number(item.remainingQuantity),
+          acceptedQuantity: Number(item.remainingQuantity),
+          notes: "",
+        })),
+      },
+      actorUserId,
+    );
+    await postMaterialReceipt(receipt.id, actorUserId);
+  }
+
+  const producible = await listProducibleSalesOrderItems();
+  const hoodieItem = producible.find((item) => item.variantSku === "PRD-0003-M-HITAM");
+  const shirtItem = producible.find((item) => item.variantSku === "PRD-0002-M-PUTIH");
+
+  if (hoodieItem) {
+    // SPK 1 — 15 unit, alur penuh sampai packing dengan satu putaran rework.
+    const orderA = await createProductionOrder(
+      {
+        salesOrderItemId: hoodieItem.salesOrderItemId,
+        plannedQuantity: 15,
+        productionLineId: line.id,
+        plannedStartDate: getDateOffset(-4),
+        plannedEndDate: getDateOffset(1),
+        notes: "Prioritas buyer — kualitas jahitan diperketat.",
+      },
+      actorUserId,
+    );
+
+    const detailA = await getProductionOrderDetail(orderA.id);
+    const stageIdByCode = new Map(detailA.stages.map((stage) => [stage.stageCode, stage.id]));
+
+    // Pemakaian material sesuai BOM (stok berkurang lewat inventory engine).
+    const issueItems = detailA.planning.rows.map((row) => ({
+      materialId: row.materialId,
+      quantity: Math.round((row.grossQuantity + row.allowanceQuantity) * 10_000) / 10_000,
+      notes: "",
+    }));
+    if (issueItems.length > 0) {
+      await issueMaterials(
+        orderA.id,
+        {
+          locationId: fabricLocationId,
+          issuedAt: getDateOffset(-4),
+          notes: "Pemakaian material untuk 15 unit hoodie.",
+          idempotencyKey: "seed-spk-hoodie-15",
+          items: issueItems,
+        },
+        actorUserId,
+      );
+    }
+
+    // Cutting: satu unit cacat → QC rework → dikerjakan ulang → inspeksi ulang lulus.
+    const cuttingId = stageIdByCode.get("CUTTING");
+    await recordStageOutput(
+      orderA.id,
+      {
+        stageCode: "CUTTING",
+        processedQuantity: 15,
+        passedQuantity: 14,
+        rejectedQuantity: 1,
+        isRework: false,
+        notes: "Satu potongan kain bergaris.",
+      },
+      actorUserId,
+    );
+    if (cuttingId) {
+      const reworkInspection = await createQcInspection(
+        {
+          productionStageId: cuttingId,
+          inspectedQuantity: 14,
+          passedQuantity: 13,
+          rejectedQuantity: 1,
+          result: "REWORK",
+          notes: "Potongan miring pada satu unit — dikembalikan untuk rework.",
+          defects: [
+            {
+              defectCode: "CUT-01",
+              defectName: "Potongan miring",
+              quantity: 1,
+              disposition: "Rework",
+            },
+          ],
+        },
+        actorUserId,
+      );
+      await recordStageOutput(
+        orderA.id,
+        {
+          stageCode: "CUTTING",
+          processedQuantity: 1,
+          passedQuantity: 1,
+          rejectedQuantity: 0,
+          isRework: true,
+          notes: "Perbaikan potongan selesai.",
+        },
+        actorUserId,
+      );
+      await createQcInspection(
+        {
+          productionStageId: cuttingId,
+          parentInspectionId: reworkInspection.id,
+          inspectedQuantity: 1,
+          passedQuantity: 1,
+          rejectedQuantity: 0,
+          result: "PASS",
+          notes: "Hasil rework diterima.",
+          defects: [],
+        },
+        actorUserId,
+      );
+    }
+
+    // Jahit → finishing → packing seluruhnya lolos 15 unit; tiap tahap diperiksa QC.
+    for (const stageCode of ["SEWING", "FINISHING", "PACKING"] as const) {
+      const stageId = stageIdByCode.get(stageCode);
+      if (!stageId) continue;
+      await recordStageOutput(
+        orderA.id,
+        {
+          stageCode,
+          processedQuantity: 15,
+          passedQuantity: 15,
+          rejectedQuantity: 0,
+          isRework: false,
+          notes: "",
+        },
+        actorUserId,
+      );
+      await createQcInspection(
+        {
+          productionStageId: stageId,
+          inspectedQuantity: 15,
+          passedQuantity: 15,
+          rejectedQuantity: 0,
+          result: "PASS",
+          notes: "Diperiksa sesuai standar kualitas.",
+          defects: [],
+        },
+        actorUserId,
+      );
+    }
+
+    // SPK 2 — sisa 15 unit, baru selesai cutting dengan rework menunggu dikerjakan.
+    const orderB = await createProductionOrder(
+      {
+        salesOrderItemId: hoodieItem.salesOrderItemId,
+        plannedQuantity: 15,
+        productionLineId: line.id,
+        plannedStartDate: getDateOffset(-1),
+        plannedEndDate: getDateOffset(7),
+        notes: "Sisa pesanan hoodie — dikerjakan pekan ini.",
+      },
+      actorUserId,
+    );
+    await recordStageOutput(
+      orderB.id,
+      {
+        stageCode: "CUTTING",
+        processedQuantity: 15,
+        passedQuantity: 14,
+        rejectedQuantity: 1,
+        isRework: false,
+        notes: "Hasil potong menunggu rework.",
+      },
+      actorUserId,
+    );
+    const detailB = await getProductionOrderDetail(orderB.id);
+    const cuttingBId = detailB.stages.find((stage) => stage.stageCode === "CUTTING")?.id;
+    if (cuttingBId) {
+      await createQcInspection(
+        {
+          productionStageId: cuttingBId,
+          inspectedQuantity: 14,
+          passedQuantity: 13,
+          rejectedQuantity: 1,
+          result: "REWORK",
+          notes: "Pola kerah bergeser pada satu unit.",
+          defects: [
+            {
+              defectCode: "CUT-02",
+              defectName: "Pola kerah bergeser",
+              quantity: 1,
+              disposition: "Rework",
+            },
+          ],
+        },
+        actorUserId,
+      );
+    }
+  }
+
+  if (shirtItem) {
+    // SPK 3 — kekurangan kancing 1,2 lusin; tetap dijalankan dengan alasan (gate FR-08).
+    await createProductionOrder(
+      {
+        salesOrderItemId: shirtItem.salesOrderItemId,
+        plannedQuantity: shirtItem.remainingQuantity,
+        productionLineId: line.id,
+        plannedStartDate: getTodayDate(),
+        plannedEndDate: getDateOffset(10),
+        shortageReason: "Kancing plastik kurang 1,2 lusin — restock PO berjalan tiba minggu ini.",
+        notes: "Bahan utama sudah tersedia; menunggu kancing.",
+      },
+      actorUserId,
+    );
+  }
+}
+
+/**
  * Seed idempotent untuk development: role, akun demo, buyer, master data
  * organisasi & produk, gudang, BOM contoh, sales order, purchase order,
- * penerimaan, serta operasi stok contoh (F1–F3).
+ * penerimaan, operasi stok contoh (F1–F3), serta produksi & QC contoh (F4).
  */
 export async function runSeed(): Promise<void> {
   console.log("Seed: roles...");
@@ -932,6 +1220,9 @@ export async function runSeed(): Promise<void> {
 
     console.log("Seed: operasi stok contoh (transfer & penyesuaian)...");
     await seedInventoryOperations(adminRow.id);
+
+    console.log("Seed: produksi & QC contoh...");
+    await seedProduction(materialIds, adminRow.id);
   }
 
   console.log(`Seed selesai. Akun admin: ${adminEmail} (password: ${DEFAULT_PASSWORD}).`);

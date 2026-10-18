@@ -22,8 +22,8 @@ Postgres (Singapore); database produksi di-seed dengan data contoh yang sama sep
 | F1   | Fondasi: auth, RBAC, audit, master data buyer, dashboard | ✅ Selesai |
 | F2   | Master data lengkap + BOM + Sales Order                  | ✅ Selesai |
 | F3   | Purchasing, penerimaan material, inventory engine        | ✅ Selesai |
-| F4   | Produksi (SPK), QC                                       | ⏳ Berikut |
-| F5   | Pengiriman, laporan                                      | ⏳ Rencana |
+| F4   | Produksi (SPK), QC                                       | ✅ Selesai |
+| F5   | Pengiriman, laporan                                      | ⏳ Berikut |
 | F6   | Polish, dokumentasi, deploy demo                         | ⏳ Rencana |
 
 > F1 juga mencakup **design system "Pabrik"** (identitas visual, token, komponen) —
@@ -37,6 +37,14 @@ Postgres (Singapore); database produksi di-seed dengan data contoh yang sama sep
 > (`PO-YYYYMM-####`: draf → dipesan → diterima sebagian/lengkap, batal bersyarat),
 > **Penerimaan Material** (`RCV-YYYYMM-####`: draf → diposting, lokasi per dokumen),
 > serta operasi **transfer** (`TRX-YYYYMM-####`) dan **penyesuaian stok** beralasan.
+> F4 mencakup **material planning** (rumus FR-07: bruto + cadangan − tersedia −
+> penerimaan terjadwal; tombol buat PO prefill dari kekurangan), **gate ketersediaan**
+> sebelum SPK (kekurangan boleh jalan hanya dengan alasan supervisor yang tercatat),
+> **SPK** (`SPK-YYYYMM-####`: terbuka → berjalan → selesai, 4 tahap otomatis
+> cutting/sewing/finishing/packing, BOM terkunci), **output tahap** dengan kontrol
+> kuantitas antar-tahap, **pemakaian material** (`MIS-YYYYMM-####`) lewat inventory
+> engine, serta **QC** (`QC-YYYYMM-####`: lolos/gagal/rework + rincian cacat) dengan
+> alur **rework** ber-`parent_inspection_id` tanpa menggandakan output.
 
 ## Stack
 
@@ -154,6 +162,8 @@ src/
     sales-order/       # F2: sales order + status & transisinya
     purchasing/        # F3: purchase order, penerimaan material
     inventory/         # F3: inventory engine, saldo, mutasi, transfer, penyesuaian
+    production/        # F4: SPK, material planning, output tahap, pemakaian material
+    qc/                # F4: inspeksi per tahap, rincian cacat, rework
   lib/
     auth/              # konfigurasi Better Auth, DAL sesi, guard API
     db/                # koneksi Drizzle + schema + seed
@@ -176,8 +186,8 @@ docs/                  # plan.md (rencana bertahap), design-system.md
 - Setiap mutasi multi-tabel berada dalam satu transaksi database bersama baris audit log
   (`recordAudit(tx, ...)`).
 - Penomoran dokumen atomik via tabel `document_sequences`
-  (`SO-/PO-/RCV-/SPK-/SJ-YYYYMM-####` mengikuti kalender Asia/Jakarta; buyer memakai counter global
-  `BUY-0001`).
+  (`SO-/PO-/RCV-/SPK-/MIS-/QC-/SJ-YYYYMM-####` mengikuti kalender Asia/Jakarta; buyer memakai counter
+  global `BUY-0001`).
 - Semua perubahan saldo stok **wajib** melalui inventory engine (`src/modules/inventory/engine.ts`):
   transaksi immutable + saldo diperbarui dalam satu transaksi DB, dengan kunci idempotensi
   untuk endpoint posting.

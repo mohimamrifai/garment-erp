@@ -120,7 +120,14 @@ export type Permission =
   | "receipt.cancel"
   | "inventory.view"
   | "inventory.move"
-  | "inventory.adjust";
+  | "inventory.adjust"
+  | "production.view"
+  | "production.create"
+  | "production.record"
+  | "production.issue"
+  | "production.cancel"
+  | "qc.view"
+  | "qc.inspect";
 
 /** Matriks izin: permission → role yang boleh. */
 export const PERMISSION_MATRIX: Record<Permission, readonly RoleCode[]> = {
@@ -167,6 +174,20 @@ export const PERMISSION_MATRIX: Record<Permission, readonly RoleCode[]> = {
   "inventory.view": ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE", "PRODUCTION_SUPERVISOR"],
   "inventory.move": ["ADMIN", "MANAGER", "WAREHOUSE"],
   "inventory.adjust": ["ADMIN", "MANAGER", "WAREHOUSE"],
+  "production.view": [
+    "ADMIN",
+    "MANAGER",
+    "PURCHASING",
+    "WAREHOUSE",
+    "PRODUCTION_SUPERVISOR",
+    "QC_STAFF",
+  ],
+  "production.create": ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
+  "production.record": ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
+  "production.issue": ["ADMIN", "MANAGER", "WAREHOUSE", "PRODUCTION_SUPERVISOR"],
+  "production.cancel": ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
+  "qc.view": ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR", "QC_STAFF"],
+  "qc.inspect": ["ADMIN", "MANAGER", "QC_STAFF"],
 };
 
 export function can(roles: readonly RoleCode[], permission: Permission): boolean {
