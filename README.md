@@ -26,12 +26,15 @@ Postgres (Singapore); database produksi di-seed dengan data contoh yang sama sep
 | F5   | Pengiriman, laporan                                      | ⏳ Rencana |
 | F6   | Polish, dokumentasi, deploy demo                         | ⏳ Rencana |
 
+> F1 juga mencakup **design system "Pabrik"** (identitas visual, token, komponen) —
+> dokumentasi di [`docs/design-system.md`](docs/design-system.md).
+
 ## Stack
 
 | Layer     | Teknologi                                                              |
 | --------- | ---------------------------------------------------------------------- |
 | Framework | Next.js 16 (App Router, TypeScript strict, Cache Components)           |
-| UI        | Tailwind CSS v4 + shadcn/ui (Base UI), React Hook Form + Zod, Recharts |
+| UI        | Tailwind CSS v4 + shadcn/ui (Base UI) + design system "Pabrik" (IBM Plex Sans/Mono), React Hook Form + Zod |
 | Database  | PostgreSQL (Docker lokal untuk dev, Neon untuk deploy)                 |
 | ORM       | Drizzle ORM + Drizzle Kit                                              |
 | Auth      | Better Auth (email + password, RBAC via tabel `roles`/`user_roles`)    |
@@ -137,7 +140,7 @@ src/
 tests/
   unit/ integration/ e2e/
 drizzle/               # migrasi SQL
-docs/                  # plan.md (rencana bertahap)
+docs/                  # plan.md (rencana bertahap), design-system.md
 ```
 
 ## Konvensi penting
@@ -153,6 +156,9 @@ docs/                  # plan.md (rencana bertahap)
   (`SO-/PO-/RCV-/SPK-/SJ-YYYYMM-####` mengikuti kalender Asia/Jakarta; buyer memakai counter global
   `BUY-0001`).
 - Semua perubahan saldo stok nantinya wajib melalui inventory engine (Fase 3).
+- Bahasa visual mengikuti `docs/design-system.md`: token di `src/app/globals.css` (jangan
+  menulis warna literal), angka/kode selalu `font-mono` + tabular, satu aksen oranye untuk
+  fokus/nav aktif, sidebar selalu graphite gelap di kedua mode tema.
 
 ## Batasan
 

@@ -40,12 +40,14 @@ export function AppSidebar({ user }: { user: SessionUserView }) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" render={<Link href="/dashboard" />} tooltip="Garment ERP">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-brand text-brand-foreground">
                 <Factory className="size-4" />
               </div>
               <div className="grid flex-1 text-left leading-tight">
-                <span className="truncate text-sm font-semibold">Garment ERP</span>
-                <span className="truncate text-xs text-muted-foreground">
+                <span className="truncate font-mono text-xs font-semibold tracking-[0.08em] uppercase">
+                  Garment ERP
+                </span>
+                <span className="truncate text-xs text-sidebar-foreground/70">
                   {roleNames.join(", ") || "Tanpa role"}
                 </span>
               </div>

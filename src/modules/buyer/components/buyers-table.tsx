@@ -52,7 +52,7 @@ export function BuyersTable({ buyers, canWrite }: { buyers: Buyer[]; canWrite: b
         <TableBody>
           {buyers.map((buyer) => (
             <TableRow key={buyer.id}>
-              <TableCell className="font-mono text-xs">{buyer.code}</TableCell>
+              <TableCell className="font-mono text-xs text-foreground/70">{buyer.code}</TableCell>
               <TableCell>
                 <div className="flex flex-col">
                   <span className="font-medium">{buyer.name}</span>
@@ -66,16 +66,25 @@ export function BuyersTable({ buyers, canWrite }: { buyers: Buyer[]; canWrite: b
               <TableCell>
                 <div className="flex flex-col text-sm">
                   <span>{buyer.contactPerson ?? "-"}</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="nums font-mono text-[11px] text-muted-foreground">
                     {[buyer.phone, buyer.email].filter(Boolean).join(" · ") || "-"}
                   </span>
                 </div>
               </TableCell>
               <TableCell>
                 {buyer.isActive ? (
-                  <Badge variant="outline">Aktif</Badge>
+                  <Badge variant="outline" className="border-success/30 bg-success/10 text-success">
+                    <span aria-hidden className="size-1.5 rounded-full bg-success" />
+                    Aktif
+                  </Badge>
                 ) : (
-                  <Badge variant="destructive">Nonaktif</Badge>
+                  <Badge
+                    variant="outline"
+                    className="border-destructive/30 bg-destructive/10 text-destructive"
+                  >
+                    <span aria-hidden className="size-1.5 rounded-full bg-destructive" />
+                    Nonaktif
+                  </Badge>
                 )}
               </TableCell>
               {canWrite ? (

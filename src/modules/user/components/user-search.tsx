@@ -22,7 +22,7 @@ export function UserSearch() {
 
   return (
     <form
-      className="relative w-full max-w-xs"
+      className="relative w-full sm:w-72"
       onSubmit={(event) => {
         event.preventDefault();
         applySearch(value.trim());

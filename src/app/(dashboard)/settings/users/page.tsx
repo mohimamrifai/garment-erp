@@ -64,7 +64,9 @@ async function UsersSection({ searchParams }: UsersPageProps) {
         {canManage ? <CreateUserDialog /> : null}
       </div>
       <UsersTable users={items} currentUserId={actor.id} canManage={canManage} />
-      <p className="text-xs text-muted-foreground">{total} pengguna terdaftar</p>
+      <p className="font-mono text-[11px] tracking-wider text-muted-foreground uppercase">
+        {total} pengguna terdaftar
+      </p>
     </div>
   );
 }

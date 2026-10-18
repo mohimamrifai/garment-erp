@@ -3,7 +3,8 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Check, LogOut, Monitor, Moon, Sun, SunMoon } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,12 @@ import { roleLabel } from "@/lib/permissions";
 import { breadcrumbsForPath } from "./nav-config";
 import type { SessionUserView } from "./app-sidebar";
 
+const THEME_OPTIONS = [
+  { value: "light", label: "Terang", icon: Sun },
+  { value: "dark", label: "Gelap", icon: Moon },
+  { value: "system", label: "Sistem", icon: Monitor },
+] as const;
+
 function initialsOf(name: string): string {
   return name
     .split(/\s+/)
@@ -42,6 +49,7 @@ function initialsOf(name: string): string {
 export function AppHeader({ user }: { user: SessionUserView }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
   const crumbs = breadcrumbsForPath(pathname);
 
   async function handleSignOut() {
@@ -51,7 +59,7 @@ export function AppHeader({ user }: { user: SessionUserView }) {
   }
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
+    <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-background px-4">
       <SidebarTrigger className="-ml-1" />
       <div className="mr-2 h-4 w-px bg-border" aria-hidden="true" />
       <Breadcrumb className="hidden md:block">
@@ -75,7 +83,28 @@ export function AppHeader({ user }: { user: SessionUserView }) {
       </Breadcrumb>
       <div className="ml-auto flex items-center gap-2">
         <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="ghost" className="h-9 gap-2 px-2" />}>
+          <DropdownMenuTrigger
+            render={<Button variant="ghost" size="icon" className="size-8" aria-label="Ubah tema" />}
+          >
+            <SunMoon />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuGroup>
+              {THEME_OPTIONS.map((option) => (
+                <DropdownMenuItem key={option.value} onClick={() => setTheme(option.value)}>
+                  <option.icon data-icon="inline-start" />
+                  {option.label}
+                  {theme === option.value ? (
+                    <Check className="ml-auto text-brand-strong" data-icon="inline-end" />
+                  ) : null}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <div className="h-4 w-px bg-border" aria-hidden="true" />
+        <DropdownMenu>
+          <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 gap-2 px-2" />}>
             <Avatar className="size-7">
               <AvatarFallback className="text-xs">{initialsOf(user.name)}</AvatarFallback>
             </Avatar>

@@ -11,7 +11,7 @@ export default function AccessDeniedPage() {
     <div className="flex flex-1 items-center justify-center py-10">
       <Card className="w-full max-w-md text-center">
         <CardHeader className="justify-items-center">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
             <ShieldX className="size-6" />
           </div>
           <CardTitle>Akses ditolak</CardTitle>

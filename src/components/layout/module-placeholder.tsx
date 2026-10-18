@@ -21,7 +21,7 @@ export function ModulePlaceholder({
     <div className="flex flex-1 items-center justify-center py-10">
       <Card className="w-full max-w-xl">
         <CardHeader className="justify-items-center text-center">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
             <Icon className="size-6" />
           </div>
           <CardTitle className="flex flex-wrap items-center justify-center gap-2">

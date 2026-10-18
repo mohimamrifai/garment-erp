@@ -99,12 +99,21 @@ export function UsersTable({
               </TableCell>
               <TableCell>
                 {user.banned ? (
-                  <Badge variant="destructive">Nonaktif</Badge>
+                  <Badge
+                    variant="outline"
+                    className="border-destructive/30 bg-destructive/10 text-destructive"
+                  >
+                    <span aria-hidden className="size-1.5 rounded-full bg-destructive" />
+                    Nonaktif
+                  </Badge>
                 ) : (
-                  <Badge variant="outline">Aktif</Badge>
+                  <Badge variant="outline" className="border-success/30 bg-success/10 text-success">
+                    <span aria-hidden className="size-1.5 rounded-full bg-success" />
+                    Aktif
+                  </Badge>
                 )}
               </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
+              <TableCell className="font-mono text-xs text-muted-foreground">
                 {formatDateId(user.createdAt)}
               </TableCell>
               {canManage ? (

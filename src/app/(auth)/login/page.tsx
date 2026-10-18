@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSessionUser } from "@/lib/auth/session";
 import { LoginForm } from "./login-form";
@@ -28,17 +27,17 @@ function LoginFormSkeleton() {
 
 export default function LoginPage() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Masuk</CardTitle>
-        <CardDescription>Gunakan akun yang diberikan Administrator.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Suspense fallback={<LoginFormSkeleton />}>
-          <RedirectIfAuthenticated />
-          <LoginForm />
-        </Suspense>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-xl font-semibold tracking-tight">Masuk</h1>
+        <p className="text-[13px] text-muted-foreground">
+          Gunakan akun yang diberikan Administrator.
+        </p>
+      </div>
+      <Suspense fallback={<LoginFormSkeleton />}>
+        <RedirectIfAuthenticated />
+        <LoginForm />
+      </Suspense>
+    </div>
   );
 }

@@ -73,6 +73,7 @@ export function LoginForm() {
             type="email"
             autoComplete="email"
             placeholder="nama@garment.local"
+            className="h-9"
             aria-invalid={Boolean(errors.email) || undefined}
             {...register("email")}
           />
@@ -85,6 +86,7 @@ export function LoginForm() {
             id="password"
             type="password"
             autoComplete="current-password"
+            className="h-9"
             aria-invalid={Boolean(errors.password) || undefined}
             {...register("password")}
           />
@@ -92,7 +94,7 @@ export function LoginForm() {
         </Field>
       </FieldGroup>
 
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" className="h-9" disabled={isSubmitting}>
         {isSubmitting ? <Spinner data-icon="inline-start" /> : null}
         Masuk
       </Button>

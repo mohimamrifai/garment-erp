@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 /** Fallback saat data sesi untuk sidebar sedang dimuat (streaming). */
 export function SidebarSkeleton() {
   return (
-    <div className="hidden w-64 shrink-0 flex-col gap-4 border-r p-2 md:flex">
+    <div className="hidden w-64 shrink-0 flex-col gap-4 border-r border-sidebar-border bg-sidebar p-2 md:flex">
       <div className="flex items-center gap-2 p-2">
         <Skeleton className="size-8 rounded-lg" />
         <div className="flex flex-col gap-1">
@@ -23,10 +23,10 @@ export function SidebarSkeleton() {
 /** Fallback saat data sesi untuk header sedang dimuat (streaming). */
 export function HeaderSkeleton() {
   return (
-    <div className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+    <div className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
       <Skeleton className="size-7" />
       <Skeleton className="h-4 w-40" />
-      <Skeleton className="ml-auto h-7 w-28 rounded-full" />
+      <Skeleton className="ml-auto h-7 w-28 rounded-lg" />
     </div>
   );
 }

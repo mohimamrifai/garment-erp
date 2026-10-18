@@ -71,7 +71,9 @@ async function BuyersSection({ searchParams }: BuyersPageProps) {
       </div>
       <BuyersTable buyers={items} canWrite={canWrite} />
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">{total} buyer terdaftar</p>
+        <p className="font-mono text-[11px] tracking-wider text-muted-foreground uppercase">
+          {total} buyer terdaftar
+        </p>
         <TablePagination page={listParams.page} totalPages={totalPages} />
       </div>
     </div>

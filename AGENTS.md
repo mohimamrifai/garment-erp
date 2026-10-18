@@ -13,6 +13,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Baca `docs/plan.md` untuk rencana bertahap dan keputusan yang sudah dikunci
   (Better Auth, Neon, REST `/api/v1`, testing pragmatis, enum status dokumen).
 - UI, pesan validasi, dan dokumentasi pengguna menggunakan Bahasa Indonesia.
+- **Desain:** ikuti `docs/design-system.md` — token di `src/app/globals.css` (jangan warna
+  literal), angka/kode selalu `font-mono` + tabular, satu aksen oranye (fokus/nav aktif),
+  sidebar graphite gelap di kedua mode.
 - **Mutasi data:** REST di `/api/v1` — route handler tipis (`auth → Zod → service → respons`).
   **Baca data:** langsung via service layer dari Server Components (jangan fetch ke diri sendiri).
 - **Cache Components aktif** (`cacheComponents: true`): bungkus pembacaan data uncached/runtime

@@ -108,6 +108,7 @@ Estimasi PRD (4–6 minggu) tetap relevan bila item bertanda *(opsional)* dilewa
 - [x] 1.12 **Vertical slice Buyer (pola referensi):** schema + Zod + repository + service; `/api/v1/buyers` (GET list paginate, POST, PATCH, POST deaktivasi); UI list + form; RBAC (Admin/Manager/Sales); audit; tes: unit 2–3, integration 2 (create + audit, list paginate), e2e 1 (login admin → buat buyer → tampil di list).
 - [x] 1.13 Seed dev dasar + akun admin; README awal (setup lokal, akun seed).
 - [x] 1.14 *(Opsional, ±0,5 hari)* Smoke deploy Vercel + Neon satu halaman — validasi pipeline & env lebih awal. — ✅ 19 Okt 2026: https://garment-erp-olive.vercel.app (Vercel region `sin1` + Neon Singapore pg18; repo GitHub tersambung untuk auto-deploy; login & API terverifikasi di produksi).
+- [x] 1.15 Design system "Pabrik" (dikerjakan setelah deploy, sebelum F2): retokn penuh token & UI — IBM Plex Sans/Mono, netral warm-graphite + satu aksen oranye industri, radius kecil (5px tag / 8px kontrol), tabel padat, sidebar graphite gelap di kedua mode, tema terang/gelap + toggle; semua halaman existing (login, shell, dashboard, tabel) memakai sistem ini. Dokumentasi: `docs/design-system.md`. — ✅ 19 Okt 2026.
 
 ### Definisi selesai F1
 - 8 role dapat login/logout; route & API terlindungi menolak akses tak berizin (dites).
