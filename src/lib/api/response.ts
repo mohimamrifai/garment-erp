@@ -62,6 +62,26 @@ export function handleApiError(error: unknown): NextResponse {
     );
   }
 
+  // Error dari Better Auth (better-call APIError): punya `status` + `body`.
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "body" in error &&
+    typeof (error as { status?: unknown }).status === "number"
+  ) {
+    const apiLike = error as { status: number; body?: { message?: string; code?: string } };
+    const status = apiLike.status >= 400 && apiLike.status <= 599 ? apiLike.status : 500;
+    return NextResponse.json(
+      {
+        error: {
+          code: apiLike.body?.code ?? "AUTH_ERROR",
+          message: apiLike.body?.message ?? "Operasi gagal diproses.",
+        },
+      },
+      { status },
+    );
+  }
+
   if (error instanceof ZodError) {
     return NextResponse.json(
       {
