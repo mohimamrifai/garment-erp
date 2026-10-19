@@ -47,6 +47,8 @@ test.describe("autentikasi", () => {
 
   test("tombol masuk cepat akun demo langsung membuka dashboard", async ({ page }) => {
     await page.goto("/login");
+    // Tunggu form tampil dulu agar tombol demo tidak dihitung prematur (flaky skip).
+    await expect(page.getByRole("button", { name: "Masuk" })).toBeVisible();
     const demoButton = page.getByRole("button", { name: /^Sales / });
     if ((await demoButton.count()) === 0) {
       test.skip(true, "NEXT_PUBLIC_DEMO_MODE tidak aktif pada build ini");

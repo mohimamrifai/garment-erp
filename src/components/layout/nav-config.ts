@@ -14,6 +14,7 @@ import {
   PackageSearch,
   Route,
   Ruler,
+  ScrollText,
   Shirt,
   ShoppingCart,
   Truck,
@@ -197,7 +198,10 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   },
   {
     label: "Pengaturan",
-    items: [{ title: "Pengguna", href: "/settings/users", icon: Users, roles: ["ADMIN"] }],
+    items: [
+      { title: "Pengguna", href: "/settings/users", icon: Users, roles: ["ADMIN"] },
+      { title: "Audit Log", href: "/settings/audit", icon: ScrollText, roles: ["ADMIN"] },
+    ],
   },
 ];
 
@@ -233,6 +237,7 @@ const PATH_LABELS: Record<string, string> = {
   "/reports": "Laporan",
   "/settings": "Pengaturan",
   "/settings/users": "Pengguna",
+  "/settings/audit": "Audit Log",
   "/akses-ditolak": "Akses Ditolak",
 };
 

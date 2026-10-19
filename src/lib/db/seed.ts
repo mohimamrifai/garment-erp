@@ -1186,14 +1186,13 @@ async function seedProduction(
 }
 
 /**
- * Seed barang jadi & pengiriman (F5). Idempotent dan aman dijalankan pada
- * database lama: lot FG di-backfill dari inspeksi packing PASS yang belum punya
- * lot, lalu satu pengiriman parsial dicontohkan (draf diposting).
+ * Seed barang jadi & pengiriman (F5). Lot FG di-backfill dari inspeksi packing
+ * PASS yang belum punya lot (aman untuk database lama), lalu dibuat contoh
+ * pesanan yang menutup status penting: satu pesanan selesai penuh (COMPLETED),
+ * satu pengiriman parsial (PARTIALLY_SHIPPED), dan satu siap kirim
+ * (READY_TO_SHIP) — semuanya lewat service agar aturan alokasi/stok diuji.
  */
 async function seedShipping(actorUserId: string): Promise<void> {
-  const existingShipment = await db.select({ id: shipments.id }).from(shipments).limit(1);
-  if (existingShipment.length > 0) return;
-
   // 1) Backfill lot barang jadi untuk inspeksi packing PASS yang sudah ada.
   const missingLots = await db
     .select({
@@ -1230,11 +1229,15 @@ async function seedShipping(actorUserId: string): Promise<void> {
     });
   }
 
-  // 2) Contoh alokasi + pengiriman parsial untuk item hoodie.
+  // 2) Bila pengiriman contoh sudah ada, seluruh langkah demo di bawah selesai.
+  const existingShipment = await db.select({ id: shipments.id }).from(shipments).limit(1);
+  if (existingShipment.length > 0) return;
+
   const [hoodie] = await db
     .select({
       id: salesOrderItems.id,
       salesOrderId: salesOrderItems.salesOrderId,
+      variantId: salesOrderItems.variantId,
     })
     .from(salesOrderItems)
     .innerJoin(productVariants, eq(salesOrderItems.variantId, productVariants.id))
@@ -1242,16 +1245,56 @@ async function seedShipping(actorUserId: string): Promise<void> {
     .limit(1);
   if (!hoodie) return;
 
+  const buyerRows = await db
+    .select({ id: buyers.id })
+    .from(buyers)
+    .orderBy(asc(buyers.code))
+    .limit(3);
+  const locationId = await resolveFinishedGoodsLocationId(db);
+
+  // 3) COMPLETED — pesanan kecil 3 unit dialokasikan lalu dikirim penuh.
+  const completedBuyer = buyerRows[1] ?? buyerRows[0];
+  if (completedBuyer) {
+    const completed = await createDemoHoodieOrder({
+      variantId: hoodie.variantId,
+      buyerId: completedBuyer.id,
+      quantity: 3,
+      orderOffsetDays: -6,
+      dueOffsetDays: 4,
+      notes: "Pesanan contoh selesai — dikirim penuh.",
+    });
+    await createAllocation(
+      completed.orderId,
+      {
+        salesOrderItemId: completed.itemId,
+        locationId,
+        quantity: 3,
+        idempotencyKey: "seed-completed-allocation",
+      },
+      actorUserId,
+    );
+    const shipment = await createShipment(
+      {
+        salesOrderId: completed.orderId,
+        locationId,
+        shippedAt: getDateOffset(-3),
+        notes: "Pengiriman penuh 3 unit — pesanan contoh selesai.",
+        items: [{ salesOrderItemId: completed.itemId, quantity: 3 }],
+      },
+      actorUserId,
+    );
+    await postShipment(shipment.id, actorUserId);
+  }
+
+  // 4) PARTIALLY_SHIPPED — item hoodie seed: alokasi 10 unit, kirim 8 unit.
   const fulfillment = await getSalesOrderFulfillment(hoodie.salesOrderId);
   const line = fulfillment.items.find((item) => item.salesOrderItemId === hoodie.id);
   if (!line || line.remainingQuantity <= 0) return;
 
-  const locationId = await resolveFinishedGoodsLocationId(db);
   const atLocation = line.locations.find((location) => location.locationId === locationId);
   const availableAtLocation = atLocation?.availableQuantity ?? 0;
-  if (availableAtLocation <= 0) return;
 
-  const allocationQuantity = Math.min(12, line.unallocatedQuantity, availableAtLocation);
+  const allocationQuantity = Math.min(10, line.unallocatedQuantity, availableAtLocation);
   if (allocationQuantity > 0) {
     await createAllocation(
       hoodie.salesOrderId,
@@ -1265,19 +1308,93 @@ async function seedShipping(actorUserId: string): Promise<void> {
     );
   }
 
-  if (availableAtLocation >= 10) {
+  if (availableAtLocation >= 8) {
     const shipment = await createShipment(
       {
         salesOrderId: hoodie.salesOrderId,
         locationId,
         shippedAt: getDateOffset(-1),
         notes: "Pengiriman contoh — sebagian pesanan, sisa menyusul.",
-        items: [{ salesOrderItemId: hoodie.id, quantity: 10 }],
+        items: [{ salesOrderItemId: hoodie.id, quantity: 8 }],
       },
       actorUserId,
     );
     await postShipment(shipment.id, actorUserId);
   }
+
+  // 5) READY_TO_SHIP — pesanan 1 unit dengan alokasi penuh, menunggu surat jalan.
+  const readyBuyer = buyerRows[2] ?? buyerRows[0];
+  if (readyBuyer) {
+    const ready = await createDemoHoodieOrder({
+      variantId: hoodie.variantId,
+      buyerId: readyBuyer.id,
+      quantity: 1,
+      orderOffsetDays: -4,
+      dueOffsetDays: 5,
+      notes: "Pesanan contoh siap kirim — barang sudah dialokasikan.",
+    });
+    const readyFulfillment = await getSalesOrderFulfillment(ready.orderId);
+    const readyLine = readyFulfillment.items.find((item) => item.salesOrderItemId === ready.itemId);
+    const readyAtLocation = readyLine?.locations.find(
+      (location) => location.locationId === locationId,
+    );
+    const readyQuantity = Math.min(
+      1,
+      readyLine?.unallocatedQuantity ?? 0,
+      readyAtLocation?.availableQuantity ?? 0,
+    );
+    if (readyQuantity > 0) {
+      await createAllocation(
+        ready.orderId,
+        {
+          salesOrderItemId: ready.itemId,
+          locationId,
+          quantity: readyQuantity,
+          idempotencyKey: "seed-ready-allocation",
+        },
+        actorUserId,
+      );
+    }
+  }
+}
+
+/** Sales order demo berstatus CONFIRMED untuk varian hoodie (satu item). */
+async function createDemoHoodieOrder(input: {
+  variantId: string;
+  buyerId: string;
+  quantity: number;
+  orderOffsetDays: number;
+  dueOffsetDays: number;
+  notes: string;
+}): Promise<{ orderId: string; itemId: string }> {
+  const number = await nextDocumentNumber(db, "SO");
+  const [order] = await db
+    .insert(salesOrders)
+    .values({
+      number,
+      buyerId: input.buyerId,
+      orderDate: getDateOffset(input.orderOffsetDays),
+      dueDate: getDateOffset(input.dueOffsetDays),
+      status: "CONFIRMED",
+      notes: input.notes,
+      confirmedAt: new Date(),
+    })
+    .returning({ id: salesOrders.id });
+  if (!order) throw new Error("Gagal membuat sales order demo.");
+
+  const [item] = await db
+    .insert(salesOrderItems)
+    .values({
+      salesOrderId: order.id,
+      variantId: input.variantId,
+      quantity: input.quantity,
+      unitPrice: "210000.00",
+      dueDate: getDateOffset(input.dueOffsetDays),
+    })
+    .returning({ id: salesOrderItems.id });
+  if (!item) throw new Error("Gagal membuat item sales order demo.");
+
+  return { orderId: order.id, itemId: item.id };
 }
 
 /**

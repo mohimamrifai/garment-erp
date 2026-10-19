@@ -218,17 +218,47 @@ Estimasi PRD (4–6 minggu) tetap relevan bila item bertanda *(opsional)* dilewa
 
 ### Tasks
 
-- [ ] 6.1 E2E suite lengkap: login tiap role, akses ditolak, alur penuh order-to-shipment, manajemen user.
-- [ ] 6.2 Security negative tests: tanpa sesi → 401; manipulasi ID (IDOR) ditolak; kuantitas negatif/invalid ditolak; double submit idempotent; akses lintas role ditolak.
-- [ ] 6.3 Audit otorisasi menyeluruh: inventaris semua endpoint & halaman vs matriks izin; tutup celah; uji ulang.
-- [ ] 6.4 Security review ringkas: secrets hanya di env; `.gitignore`; pesan error tidak membocorkan info; setelan cookie/session; catat hasil.
-- [ ] 6.5 Seed demo lengkap + realistis: master data, SO lintas status, PO, produksi berjalan, QC, FG, shipment; 8 akun demo (satu per role) — didokumentasikan di README; `docs/demo.md` berisi skenario demo.
-- [ ] 6.6 Neon produksi: project + region Singapura; pooled & direct connection; jalankan migrasi + seed; (gunakan Neon MCP).
-- [ ] 6.7 Vercel: deploy + env vars (pooled untuk runtime, direct untuk migrasi); smoke test publik.
-- [ ] 6.8 README final: setup, arsitektur, alur bisnis, akun demo, ekspor CSV, batasan paket gratis + ringkasan Inggris singkat; screenshot/GIF portofolio.
-- [ ] 6.9 `docs/api.md`: daftar endpoint + contoh request/response.
-- [ ] 6.10 Verifikasi checklist acceptance PRD §12 satu per satu; catat bukti; perbaiki yang gagal.
-- [ ] 6.11 Tag `v1.0`; catat backlog post-MVP.
+- [x] 6.1 E2E suite lengkap: login tiap role, akses ditolak, alur penuh order-to-shipment, manajemen user.
+  - `roles.spec.ts` (login + menu + halaman diizinkan + `/akses-ditolak` untuk **8 role**), `users.spec.ts`
+    (buat → nonaktifkan → akun tertolak → aktifkan → login; larangan nonaktifkan diri; audit log),
+    `shipping.spec.ts` (order-to-shipment penuh). Total **37 E2E lulus** terhadap build produksi.
+- [x] 6.2 Security negative tests: tanpa sesi → 401; manipulasi ID (IDOR) ditolak; kuantitas negatif/invalid ditolak; double submit idempotent; akses lintas role ditolak.
+  - `security.spec.ts`: 8 skenario (401 tanpa sesi, 403 lintas role, 422 kuantitas negatif/nol/pecahan &
+    item kosong, 409 melebihi sisa & posting ganda, 404 ID non-UUID/tidak ada, 400 item dokumen lain,
+    idempotensi transfer stok).
+- [x] 6.3 Audit otorisasi menyeluruh: inventaris semua endpoint & halaman vs matriks izin; tutup celah; uji ulang.
+  - Inventaris **67 route API + 41 halaman** vs matriks izin; temuan: (a) ID non-UUID → 500 (diperbaiki jadi
+    404 di `handleApiError`, sadar pembungkus error Drizzle), (b) permission `audit.view` tanpa pemakai →
+    halaman `/settings/audit` + `GET /api/v1/audit-logs` (M11), (c) guard izin dievaluasi sebelum validasi body
+    (terverifikasi lewat uji 403 dengan body kosong). Rincian di `docs/security-review.md`.
+- [x] 6.4 Security review ringkas: secrets hanya di env; `.gitignore`; pesan error tidak membocorkan info; setelan cookie/session; catat hasil.
+  - `docs/security-review.md` §3: secrets env-only, `.env*` ter-ignore, error seragam tanpa stack/query,
+    cookie `HttpOnly; SameSite=Lax; Secure` (HTTPS) 7 hari, rate limit aktif di produksi; ditambah header
+    keamanan (`nosniff`, `DENY`, HSTS, dll.) + `poweredByHeader: false`; verifikasi `curl` tercatat.
+- [x] 6.5 Seed demo lengkap + realistis: master data, SO lintas status, PO, produksi berjalan, QC, FG, shipment; 8 akun demo (satu per role) — didokumentasikan di README; `docs/demo.md` berisi skenario demo.
+  - Seed diperluas: **6 status SO** (Draf, Dalam Produksi, Siap Kirim, Terikirim Sebagian, Selesai,
+    Dibatalkan) dengan 2 surat jalan POSTED (satu pesanan selesai penuh, satu parsial), 5 PO, 3 SPK
+    (termasuk riwayat rework), 6 QC, lot & saldo FG; 8 akun demo; `docs/demo.md` + akun di README.
+- [x] 6.6 Neon produksi: project + region Singapura; pooled & direct connection; jalankan migrasi + seed; (gunakan Neon MCP).
+  - Project `young-field-23383019` (free tier), region Singapura; `DATABASE_URL` pooled untuk runtime Vercel,
+    direct untuk migrasi/seed; migrasi + seed dijalankan dari nol pada database produksi (via build command
+    sementara) dan terverifikasi lewat API produksi.
+- [x] 6.7 Vercel: deploy + env vars (pooled untuk runtime, direct untuk migrasi); smoke test publik.
+  - Deploy `dpl_69QWNPGmmkVofqvhHMSrdZGppNCA` → https://garment-erp-olive.vercel.app (region `sin1`);
+    env: `DATABASE_URL` pooled, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `NEXT_PUBLIC_DEMO_MODE=1`;
+    smoke test 10 halaman 200, login + cookie, API data, CSV, 401/404, header keamanan (tabel di `docs/acceptance.md` §11).
+- [x] 6.8 README final: setup, arsitektur, alur bisnis, akun demo, ekspor CSV, batasan paket gratis + ringkasan Inggris singkat; screenshot/GIF portofolio.
+  - README ditulis ulang (demo + screenshot, status F1–F6, alur bisnis, testing, deployment, batasan,
+    ringkasan Inggris); **13 screenshot** di `docs/screenshots/` diregenerasi via `scripts/capture-screenshots.mjs`.
+- [x] 6.9 `docs/api.md`: daftar endpoint + contoh request/response.
+  - `docs/api.md`: konvensi, tabel kode error, contoh auth, seluruh endpoint per modul (67 route) beserta
+    izin, contoh request/response, aturan bisnis, catatan implementasi.
+- [x] 6.10 Verifikasi checklist acceptance PRD §12 satu per satu; catat bukti; perbaiki yang gagal.
+  - `docs/acceptance.md`: 12/12 butir terpenuhi dengan bukti; perbaikan yang ditemukan saat verifikasi:
+    bug `pnpm db:reset` (jejak migrasi Drizzle tidak ikut dihapus sehingga migrasi dari nol dilewati) —
+    diperbaiki + diverifikasi; halaman audit log ditambahkan untuk M11.
+- [x] 6.11 Tag `v1.0`; catat backlog post-MVP.
+  - Tag `v1.0` pada commit rilis; kandidat pasca-MVP dicatat di `docs/backlog.md`.
 
 ### Definisi selesai F6
 - Seluruh checklist §12 tercentang; demo publik hidup dan bisa dinavigasi per role.

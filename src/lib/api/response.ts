@@ -47,6 +47,14 @@ export function parseQuery<T>(request: Request, schema: ZodType<T>): T {
   return parsed.data;
 }
 
+/** Kode error Postgres (mis. `22P02` = teks tidak valid untuk tipe UUID). */
+function postgresErrorCode(error: unknown, depth = 0): string | undefined {
+  if (typeof error !== "object" || error === null || depth > 4) return undefined;
+  const candidate = error as { code?: unknown; cause?: unknown };
+  if (typeof candidate.code === "string") return candidate.code;
+  return postgresErrorCode(candidate.cause, depth + 1);
+}
+
 /** Tangkap error apa pun dan ubah menjadi respons JSON sesuai konvensi. */
 export function handleApiError(error: unknown): NextResponse {
   if (error instanceof ApiError) {
@@ -92,6 +100,15 @@ export function handleApiError(error: unknown): NextResponse {
         },
       },
       { status: 422 },
+    );
+  }
+
+  // ID non-UUID pada parameter URL: jangan bocorkan detail query Postgres.
+  // Drizzle membungkus error driver, jadi kode Postgres dicek hingga `cause`.
+  if (postgresErrorCode(error) === "22P02") {
+    return NextResponse.json(
+      { error: { code: "NOT_FOUND", message: "Dokumen tidak ditemukan." } },
+      { status: 404 },
     );
   }
 

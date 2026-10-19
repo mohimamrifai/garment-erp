@@ -10,6 +10,9 @@ import { runSeed } from "../src/lib/db/seed";
 async function main(): Promise<void> {
   console.log(`Reset database: ${safeUrl(process.env.DATABASE_URL)}`);
   await sql.unsafe("DROP SCHEMA IF EXISTS public CASCADE");
+  // Catatan migrasi Drizzle tersimpan di schema `drizzle`; ikut dihapus agar
+  // migrasi benar-benar dijalankan dari nol pada database yang sudah pernah di-seed.
+  await sql.unsafe("DROP SCHEMA IF EXISTS drizzle CASCADE");
   await sql.unsafe("CREATE SCHEMA public");
 
   console.log("Menjalankan migrasi...");
