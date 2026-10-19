@@ -23,8 +23,8 @@ Postgres (Singapore); database produksi di-seed dengan data contoh yang sama sep
 | F2   | Master data lengkap + BOM + Sales Order                  | ✅ Selesai |
 | F3   | Purchasing, penerimaan material, inventory engine        | ✅ Selesai |
 | F4   | Produksi (SPK), QC                                       | ✅ Selesai |
-| F5   | Pengiriman, laporan                                      | ⏳ Berikut |
-| F6   | Polish, dokumentasi, deploy demo                         | ⏳ Rencana |
+| F5   | Barang jadi, pengiriman, laporan                         | ✅ Selesai |
+| F6   | Polish, dokumentasi, deploy demo                         | ⏳ Berikut |
 
 > F1 juga mencakup **design system "Pabrik"** (identitas visual, token, komponen) —
 > dokumentasi di [`docs/design-system.md`](docs/design-system.md).
@@ -45,6 +45,12 @@ Postgres (Singapore); database produksi di-seed dengan data contoh yang sama sep
 > kuantitas antar-tahap, **pemakaian material** (`MIS-YYYYMM-####`) lewat inventory
 > engine, serta **QC** (`QC-YYYYMM-####`: lolos/gagal/rework + rincian cacat) dengan
 > alur **rework** ber-`parent_inspection_id` tanpa menggandakan output.
+> F5 mencakup **barang jadi** (lot `finished_goods` untuk ketertelusuran SPK + inspeksi QC
+> akhir; saldo tetap satu-satunya lewat inventory engine), **alokasi/reservasi** FG ke item
+> SO beserta pelepasan, **surat jalan** (`SJ-YYYYMM-####`: draf → diposting, parsial,
+> guard sisa pesanan & stok, posting atomik via engine), status SO **terkirim sebagian** /
+> **selesai**, **dashboard penuh** (filter periode 7/30/90 hari + grafik output Recharts),
+> dan **7 laporan** dengan filter periode, scoping role, serta **ekspor CSV**.
 
 ## Stack
 
@@ -164,6 +170,10 @@ src/
     inventory/         # F3: inventory engine, saldo, mutasi, transfer, penyesuaian
     production/        # F4: SPK, material planning, output tahap, pemakaian material
     qc/                # F4: inspeksi per tahap, rincian cacat, rework
+    finished-goods/    # F5: lot & saldo barang jadi
+    shipping/          # F5: alokasi, surat jalan, pemenuhan SO
+    reports/           # F5: 7 laporan + ekspor CSV
+    dashboard/         # F5: agregasi periode & grafik output
   lib/
     auth/              # konfigurasi Better Auth, DAL sesi, guard API
     db/                # koneksi Drizzle + schema + seed

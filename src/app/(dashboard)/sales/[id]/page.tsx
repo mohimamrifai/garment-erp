@@ -22,6 +22,8 @@ import { formatDateId, formatDateTimeId } from "@/lib/utils/dates";
 import { SoDetailActions } from "@/modules/sales-order/components/so-detail-actions";
 import { SoStatusBadge } from "@/modules/sales-order/components/so-status-badge";
 import { getSalesOrderDetail } from "@/modules/sales-order/service";
+import { OrderFulfillmentSection } from "@/modules/shipping/components/order-fulfillment-section";
+import { getSalesOrderFulfillment } from "@/modules/shipping/service";
 
 export const metadata: Metadata = { title: "Detail Sales Order" };
 
@@ -62,6 +64,13 @@ async function SalesOrderDetailSection({ params }: SalesOrderDetailPageProps) {
   }
 
   const { order, buyer, items, totals } = detail;
+  const fulfillment = await getSalesOrderFulfillment(order.id);
+  const fulfillmentByItem = new Map(
+    fulfillment.items.map((item) => [item.salesOrderItemId, item]),
+  );
+  const canViewShipping = can(actor.roles, "shipment.view");
+  const canAllocate = can(actor.roles, "fg.allocate");
+  const canCreateShipment = can(actor.roles, "shipment.create");
 
   return (
     <>
@@ -163,7 +172,7 @@ async function SalesOrderDetailSection({ params }: SalesOrderDetailPageProps) {
             Item Pesanan
           </h2>
           <p className="text-xs text-muted-foreground">
-            Kolom terkirim & sisa terisi setelah modul pengiriman aktif (Fase 4).
+            Terkirim dihitung dari surat jalan yang sudah diposting.
           </p>
         </div>
 
@@ -181,39 +190,44 @@ async function SalesOrderDetailSection({ params }: SalesOrderDetailPageProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{item.productName}</span>
-                      <span className="nums font-mono text-[11px] text-muted-foreground">
-                        {item.variantSku} · {item.size}/{item.color}
-                      </span>
-                      {item.notes ? (
-                        <span className="mt-0.5 text-xs text-muted-foreground">{item.notes}</span>
-                      ) : null}
-                    </div>
-                  </TableCell>
-                  <TableCell className="nums text-right font-mono text-sm">
-                    {formatNumber(item.quantity)}
-                  </TableCell>
-                  <TableCell className="nums text-right font-mono text-sm text-muted-foreground">
-                    {formatNumber(0)}
-                  </TableCell>
-                  <TableCell className="nums text-right font-mono text-sm">
-                    {formatNumber(item.quantity)}
-                  </TableCell>
-                  <TableCell className="nums text-right font-mono text-sm">
-                    {formatIdr(item.unitPrice)}
-                  </TableCell>
-                  <TableCell className="nums text-right font-mono text-sm">
-                    {formatIdr(item.quantity * Number(item.unitPrice))}
-                  </TableCell>
-                  <TableCell className="nums font-mono text-xs text-muted-foreground">
-                    {formatDateId(item.dueDate ?? order.dueDate)}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {items.map((item) => {
+                const line = fulfillmentByItem.get(item.id);
+                const shipped = line?.shippedQuantity ?? 0;
+                const remaining = line?.remainingQuantity ?? item.quantity;
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{item.productName}</span>
+                        <span className="nums font-mono text-[11px] text-muted-foreground">
+                          {item.variantSku} · {item.size}/{item.color}
+                        </span>
+                        {item.notes ? (
+                          <span className="mt-0.5 text-xs text-muted-foreground">{item.notes}</span>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                    <TableCell className="nums text-right font-mono text-sm">
+                      {formatNumber(item.quantity)}
+                    </TableCell>
+                    <TableCell className="nums text-right font-mono text-sm">
+                      {formatNumber(shipped)}
+                    </TableCell>
+                    <TableCell className="nums text-right font-mono text-sm">
+                      {formatNumber(remaining)}
+                    </TableCell>
+                    <TableCell className="nums text-right font-mono text-sm">
+                      {formatIdr(item.unitPrice)}
+                    </TableCell>
+                    <TableCell className="nums text-right font-mono text-sm">
+                      {formatIdr(item.quantity * Number(item.unitPrice))}
+                    </TableCell>
+                    <TableCell className="nums font-mono text-xs text-muted-foreground">
+                      {formatDateId(item.dueDate ?? order.dueDate)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
             <TableFooter>
               <TableRow>
@@ -223,8 +237,12 @@ async function SalesOrderDetailSection({ params }: SalesOrderDetailPageProps) {
                 <TableCell className="nums text-right font-mono text-sm font-medium">
                   {formatNumber(totals.totalQuantity)}
                 </TableCell>
-                <TableCell className="text-right text-xs text-muted-foreground">—</TableCell>
-                <TableCell />
+                <TableCell className="nums text-right font-mono text-sm">
+                  {formatNumber(totals.shippedQuantity)}
+                </TableCell>
+                <TableCell className="nums text-right font-mono text-sm">
+                  {formatNumber(totals.totalQuantity - totals.shippedQuantity)}
+                </TableCell>
                 <TableCell className="text-right text-xs text-muted-foreground">Total</TableCell>
                 <TableCell className="nums text-right font-mono text-sm font-medium">
                   {formatIdr(totals.totalValue)}
@@ -235,6 +253,14 @@ async function SalesOrderDetailSection({ params }: SalesOrderDetailPageProps) {
           </Table>
         </div>
       </div>
+
+      {canViewShipping ? (
+        <OrderFulfillmentSection
+          fulfillment={fulfillment}
+          canAllocate={canAllocate}
+          canCreateShipment={canCreateShipment}
+        />
+      ) : null}
     </>
   );
 }

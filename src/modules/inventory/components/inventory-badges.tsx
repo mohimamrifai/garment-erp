@@ -1,19 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "cn";
 import type { InventoryItemTypeName, InventoryTransactionListRow } from "../service";
+import { INVENTORY_TRANSACTION_TYPE_LABELS } from "../status";
 
-export const TRANSACTION_TYPE_LABELS: Record<
-  InventoryTransactionListRow["transactionType"],
-  string
-> = {
-  RECEIPT: "Penerimaan",
-  ISSUE: "Pengeluaran",
-  TRANSFER: "Transfer",
-  ADJUSTMENT_IN: "Penyesuaian Masuk",
-  ADJUSTMENT_OUT: "Penyesuaian Keluar",
-  RESERVE: "Reservasi",
-  UNRESERVE: "Batal Reservasi",
-};
+export const TRANSACTION_TYPE_LABELS = INVENTORY_TRANSACTION_TYPE_LABELS;
 
 const TYPE_TONE_CLASSES: Record<InventoryTransactionListRow["transactionType"], string> = {
   RECEIPT: "border-success/30 bg-success/10 text-success",

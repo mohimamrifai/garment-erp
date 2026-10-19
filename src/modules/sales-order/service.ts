@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, ilike, inArray, lt, lte, notInArray, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, lt, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import { ApiError } from "@/lib/api/errors";
 import { recordAudit } from "@/lib/audit";
 import { db, type DbTransaction } from "@/lib/db";
@@ -8,10 +8,13 @@ import {
   products,
   salesOrderItems,
   salesOrders,
+  shipmentItems,
+  shipments,
 } from "@/lib/db/schema";
 import { getDateOffset, getTodayDate } from "@/lib/utils/dates";
 import { nextDocumentNumber } from "@/lib/utils/documents";
 import { nullable } from "@/lib/utils/strings";
+import { releaseAllOrderAllocations } from "@/modules/shipping/service";
 import type { CancelSalesOrderInput, ListSalesOrdersQuery, SalesOrderFormInput } from "./schemas";
 import { FINAL_SO_STATUSES, type SalesOrderStatus } from "./status";
 
@@ -153,15 +156,31 @@ export async function getSalesOrderDetail(salesOrderId: string): Promise<SalesOr
     .reduce((sum, item) => sum + item.quantity * Number(item.unitPrice), 0)
     .toFixed(2);
 
+  const [shippedRow] =
+    items.length > 0
+      ? await db
+          .select({ value: sql<string>`coalesce(sum(${shipmentItems.quantity}), 0)` })
+          .from(shipmentItems)
+          .innerJoin(shipments, eq(shipmentItems.shipmentId, shipments.id))
+          .where(
+            and(
+              inArray(
+                shipmentItems.salesOrderItemId,
+                items.map((item) => item.id),
+              ),
+              eq(shipments.status, "POSTED"),
+            ),
+          )
+      : [];
+
   return {
     order: orderRow.order,
     buyer: orderRow.buyer,
     items,
-    // Fase 4/5 (SPK & pengiriman) akan mengisi angka terkirim per item.
     totals: {
       itemCount: items.length,
       totalQuantity,
-      shippedQuantity: 0,
+      shippedQuantity: Number(shippedRow?.value ?? 0),
       totalValue,
     },
   };
@@ -382,7 +401,24 @@ export async function cancelSalesOrder(
         "Sales order yang sudah masuk produksi atau pengiriman tidak dapat dibatalkan.",
       );
     }
-    // Fase 4/5: tolak pembatalan bila ada SPK berjalan atau pengiriman tercatat.
+
+    const [activeShipment] = await tx
+      .select({ value: count() })
+      .from(shipments)
+      .where(and(eq(shipments.salesOrderId, salesOrderId), ne(shipments.status, "CANCELLED")));
+    if (Number(activeShipment?.value ?? 0) > 0) {
+      throw ApiError.conflict(
+        "Batalkan pengiriman draf terlebih dahulu sebelum membatalkan pesanan.",
+      );
+    }
+
+    // Stok yang sudah dialokasikan dikembalikan agar tidak tertahan.
+    const releasedQuantity = await releaseAllOrderAllocations(
+      tx,
+      salesOrderId,
+      actorUserId,
+      `pembatalan ${order.number}`,
+    );
 
     const [updated] = await tx
       .update(salesOrders)
@@ -396,7 +432,12 @@ export async function cancelSalesOrder(
       action: "sales-order.cancel",
       entityType: "sales-order",
       entityId: salesOrderId,
-      details: { number: order.number, reason: input.reason, fromStatus: order.status },
+      details: {
+        number: order.number,
+        reason: input.reason,
+        fromStatus: order.status,
+        releasedAllocationQuantity: releasedQuantity,
+      },
     });
     return updated;
   });

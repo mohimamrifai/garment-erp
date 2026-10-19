@@ -114,3 +114,6 @@ export const salesOrderItems = pgTable(
     check("sales_order_items_price_chk", sql`${t.unitPrice} >= 0`),
   ],
 );
+
+export type SalesOrder = typeof salesOrders.$inferSelect;
+export type SalesOrderItem = typeof salesOrderItems.$inferSelect;

@@ -127,7 +127,14 @@ export type Permission =
   | "production.issue"
   | "production.cancel"
   | "qc.view"
-  | "qc.inspect";
+  | "qc.inspect"
+  | "fg.view"
+  | "fg.allocate"
+  | "shipment.view"
+  | "shipment.create"
+  | "shipment.post"
+  | "shipment.cancel"
+  | "report.view";
 
 /** Matriks izin: permission → role yang boleh. */
 export const PERMISSION_MATRIX: Record<Permission, readonly RoleCode[]> = {
@@ -188,6 +195,13 @@ export const PERMISSION_MATRIX: Record<Permission, readonly RoleCode[]> = {
   "production.cancel": ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
   "qc.view": ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR", "QC_STAFF"],
   "qc.inspect": ["ADMIN", "MANAGER", "QC_STAFF"],
+  "fg.view": ["ADMIN", "MANAGER", "SALES", "WAREHOUSE", "SHIPPING_STAFF"],
+  "fg.allocate": ["ADMIN", "MANAGER", "SALES", "SHIPPING_STAFF"],
+  "shipment.view": ["ADMIN", "MANAGER", "SALES", "WAREHOUSE", "SHIPPING_STAFF"],
+  "shipment.create": ["ADMIN", "MANAGER", "SALES", "SHIPPING_STAFF"],
+  "shipment.post": ["ADMIN", "MANAGER", "WAREHOUSE", "SHIPPING_STAFF"],
+  "shipment.cancel": ["ADMIN", "MANAGER", "SHIPPING_STAFF"],
+  "report.view": ROLE_CODES,
 };
 
 export function can(roles: readonly RoleCode[], permission: Permission): boolean {

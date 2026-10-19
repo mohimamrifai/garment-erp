@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
@@ -7,16 +7,20 @@ import {
   buyers,
   departments,
   employees,
+  finishedGoods,
   inventoryTransactions,
   materials,
   productionLines,
   productionOrders,
+  productionStages,
   productVariants,
   products,
   purchaseOrders,
+  qcInspections,
   roles,
   salesOrderItems,
   salesOrders,
+  shipments,
   suppliers,
   unitsOfMeasure,
   user,
@@ -28,6 +32,10 @@ import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/lib/demo-accounts";
 import { ROLE_SEED, type RoleCode } from "@/lib/permissions";
 import { getDateOffset, getTodayDate } from "@/lib/utils/dates";
 import { nextDocumentNumber } from "@/lib/utils/documents";
+import {
+  recordFinishedGoodsLot,
+  resolveFinishedGoodsLocationId,
+} from "@/modules/finished-goods/service";
 import { adjustStock, transferStock } from "@/modules/inventory/service";
 import {
   createMaterialReceipt,
@@ -44,6 +52,12 @@ import {
   recordStageOutput,
 } from "@/modules/production/service";
 import { createQcInspection } from "@/modules/qc/service";
+import {
+  createAllocation,
+  createShipment,
+  getSalesOrderFulfillment,
+  postShipment,
+} from "@/modules/shipping/service";
 
 const DEFAULT_PASSWORD = process.env.SEED_DEFAULT_PASSWORD ?? DEMO_PASSWORD;
 
@@ -1172,6 +1186,101 @@ async function seedProduction(
 }
 
 /**
+ * Seed barang jadi & pengiriman (F5). Idempotent dan aman dijalankan pada
+ * database lama: lot FG di-backfill dari inspeksi packing PASS yang belum punya
+ * lot, lalu satu pengiriman parsial dicontohkan (draf diposting).
+ */
+async function seedShipping(actorUserId: string): Promise<void> {
+  const existingShipment = await db.select({ id: shipments.id }).from(shipments).limit(1);
+  if (existingShipment.length > 0) return;
+
+  // 1) Backfill lot barang jadi untuk inspeksi packing PASS yang sudah ada.
+  const missingLots = await db
+    .select({
+      inspectionId: qcInspections.id,
+      inspectionNumber: qcInspections.number,
+      passedQuantity: qcInspections.passedQuantity,
+      productionOrderId: productionStages.productionOrderId,
+      variantId: salesOrderItems.variantId,
+    })
+    .from(qcInspections)
+    .innerJoin(productionStages, eq(qcInspections.productionStageId, productionStages.id))
+    .innerJoin(productionOrders, eq(productionStages.productionOrderId, productionOrders.id))
+    .innerJoin(salesOrderItems, eq(productionOrders.salesOrderItemId, salesOrderItems.id))
+    .leftJoin(finishedGoods, eq(finishedGoods.qcInspectionId, qcInspections.id))
+    .where(
+      and(
+        eq(productionStages.stageCode, "PACKING"),
+        eq(qcInspections.result, "PASS"),
+        isNull(finishedGoods.id),
+      ),
+    );
+
+  for (const inspection of missingLots) {
+    if (inspection.passedQuantity <= 0) continue;
+    await db.transaction(async (tx) => {
+      await recordFinishedGoodsLot(tx, {
+        productionOrderId: inspection.productionOrderId,
+        qcInspectionId: inspection.inspectionId,
+        variantId: inspection.variantId,
+        quantity: inspection.passedQuantity,
+        createdBy: actorUserId,
+        notes: `Barang jadi lolos QC akhir (${inspection.inspectionNumber}).`,
+      });
+    });
+  }
+
+  // 2) Contoh alokasi + pengiriman parsial untuk item hoodie.
+  const [hoodie] = await db
+    .select({
+      id: salesOrderItems.id,
+      salesOrderId: salesOrderItems.salesOrderId,
+    })
+    .from(salesOrderItems)
+    .innerJoin(productVariants, eq(salesOrderItems.variantId, productVariants.id))
+    .where(eq(productVariants.variantSku, "PRD-0003-M-HITAM"))
+    .limit(1);
+  if (!hoodie) return;
+
+  const fulfillment = await getSalesOrderFulfillment(hoodie.salesOrderId);
+  const line = fulfillment.items.find((item) => item.salesOrderItemId === hoodie.id);
+  if (!line || line.remainingQuantity <= 0) return;
+
+  const locationId = await resolveFinishedGoodsLocationId(db);
+  const atLocation = line.locations.find((location) => location.locationId === locationId);
+  const availableAtLocation = atLocation?.availableQuantity ?? 0;
+  if (availableAtLocation <= 0) return;
+
+  const allocationQuantity = Math.min(12, line.unallocatedQuantity, availableAtLocation);
+  if (allocationQuantity > 0) {
+    await createAllocation(
+      hoodie.salesOrderId,
+      {
+        salesOrderItemId: hoodie.id,
+        locationId,
+        quantity: allocationQuantity,
+        idempotencyKey: "seed-hoodie-allocation",
+      },
+      actorUserId,
+    );
+  }
+
+  if (availableAtLocation >= 10) {
+    const shipment = await createShipment(
+      {
+        salesOrderId: hoodie.salesOrderId,
+        locationId,
+        shippedAt: getDateOffset(-1),
+        notes: "Pengiriman contoh — sebagian pesanan, sisa menyusul.",
+        items: [{ salesOrderItemId: hoodie.id, quantity: 10 }],
+      },
+      actorUserId,
+    );
+    await postShipment(shipment.id, actorUserId);
+  }
+}
+
+/**
  * Seed idempotent untuk development: role, akun demo, buyer, master data
  * organisasi & produk, gudang, BOM contoh, sales order, purchase order,
  * penerimaan, operasi stok contoh (F1–F3), serta produksi & QC contoh (F4).
@@ -1223,6 +1332,9 @@ export async function runSeed(): Promise<void> {
 
     console.log("Seed: produksi & QC contoh...");
     await seedProduction(materialIds, adminRow.id);
+
+    console.log("Seed: barang jadi & pengiriman contoh...");
+    await seedShipping(adminRow.id);
   }
 
   console.log(`Seed selesai. Akun admin: ${adminEmail} (password: ${DEFAULT_PASSWORD}).`);

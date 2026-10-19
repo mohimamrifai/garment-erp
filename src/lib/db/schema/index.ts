@@ -8,3 +8,5 @@ export * from "./bom";
 export * from "./purchasing";
 export * from "./inventory";
 export * from "./production";
+export * from "./finished-goods";
+export * from "./shipping";

@@ -17,6 +17,7 @@ import {
 } from "@/lib/db/schema";
 import { nextDocumentNumber } from "@/lib/utils/documents";
 import { nullable } from "@/lib/utils/strings";
+import { recordFinishedGoodsLot } from "@/modules/finished-goods/service";
 import {
   recalculateOrderStatus,
   recalculateStageProgress,
@@ -454,6 +455,30 @@ export async function createQcInspection(
     if (input.result === "REWORK") {
       await recalculateStageProgress(tx, stage.id);
       await recalculateOrderStatus(tx, stage.productionOrderId);
+    }
+
+    // Lolos QC akhir (tahap packing) → catat lot barang jadi + saldo via engine.
+    if (
+      stage.stageCode === "PACKING" &&
+      input.result === "PASS" &&
+      input.passedQuantity > 0
+    ) {
+      const [soItem] = await tx
+        .select({ variantId: salesOrderItems.variantId })
+        .from(productionOrders)
+        .innerJoin(salesOrderItems, eq(productionOrders.salesOrderItemId, salesOrderItems.id))
+        .where(eq(productionOrders.id, stage.productionOrderId))
+        .limit(1);
+      if (!soItem) throw ApiError.badRequest("Item sales order SPK tidak ditemukan.");
+
+      await recordFinishedGoodsLot(tx, {
+        productionOrderId: stage.productionOrderId,
+        qcInspectionId: inspection.id,
+        variantId: soItem.variantId,
+        quantity: input.passedQuantity,
+        createdBy: actorUserId,
+        notes: `Barang jadi lolos QC akhir (${inspection.number}).`,
+      });
     }
 
     await recordAudit(tx, {
