@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDateId, formatDateTimeId, getDocumentPeriod } from "@/lib/utils/dates";
+import { formatDateId, formatDateTimeId, formatTimeId, getDocumentPeriod } from "@/lib/utils/dates";
 
 describe("periode dokumen (kalender Asia/Jakarta)", () => {
   it("menggeser ke bulan berikutnya setelah tengah malam WIB", () => {
@@ -28,6 +28,11 @@ describe("format tanggal Indonesia", () => {
 
   it("formatDateTimeId selalu berakhiran WIB", () => {
     expect(formatDateTimeId(new Date("2026-10-18T05:00:00Z"))).toMatch(/WIB$/);
+  });
+
+  it("formatTimeId memakai jam WIB 24 jam", () => {
+    expect(formatTimeId(new Date("2026-10-18T05:00:00Z"))).toBe("12.00");
+    expect(formatTimeId(new Date("2026-10-18T17:05:00Z"))).toBe("00.05");
   });
 
   it("menerima ISO string dan number", () => {

@@ -247,8 +247,8 @@ async function ProductionOrderDetailSection({ params }: ProductionOrderDetailPag
 
         {issues.length === 0 ? (
           <p className="rounded-lg border p-4 text-[13px] text-muted-foreground">
-            Belum ada pemakaian material. Pemakaian mengurangi stok lewat inventory engine dan
-            tercatat per SPK.
+            Belum ada pemakaian material. Pemakaian material mengurangi stok secara otomatis
+            dan tercatat per SPK.
           </p>
         ) : (
           <div className="flex flex-col gap-3">

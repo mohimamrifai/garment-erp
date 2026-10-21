@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatNumber } from "@/lib/utils/currency";
+import { formatDateId } from "@/lib/utils/dates";
 import type { BomListRow } from "../service";
 import { BomRowActions } from "./bom-row-actions";
 import { BomStatusBadge } from "./bom-status-badge";
@@ -70,8 +71,12 @@ export function BomsTable({ boms, canWrite }: { boms: BomListRow[]; canWrite: bo
                 {formatNumber(bom.itemCount)}
               </TableCell>
               <TableCell className="nums font-mono text-xs text-muted-foreground">
-                {bom.effectiveFrom}
-                {bom.effectiveUntil ? ` → ${bom.effectiveUntil}` : bom.isActive ? " →" : ""}
+                {formatDateId(bom.effectiveFrom)}
+                {bom.effectiveUntil
+                  ? ` → ${formatDateId(bom.effectiveUntil)}`
+                  : bom.isActive
+                    ? " →"
+                    : ""}
               </TableCell>
               {canWrite ? (
                 <TableCell className="text-right">

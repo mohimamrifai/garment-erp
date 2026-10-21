@@ -26,7 +26,7 @@ export default function BomPage({ searchParams }: BomPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Bill of Materials"
-        description="Komposisi material per varian produk dengan versi dan aktivasi (PRD FR-07)."
+        description="Komposisi material per varian produk, lengkap dengan versi dan aktivasi."
       />
       <Suspense fallback={<BomSectionSkeleton />}>
         <BomSection searchParams={searchParams} />

@@ -22,7 +22,7 @@ export default function UomsPage({ searchParams }: UomsPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Satuan & Ukur"
-        description="Satuan pengukuran material (PRD FR-03)."
+        description="Satuan pengukuran material dan hasil produksi."
       />
       <Suspense fallback={<UomsSectionSkeleton />}>
         <UomsSection searchParams={searchParams} />

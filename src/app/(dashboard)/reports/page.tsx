@@ -30,7 +30,7 @@ export default function ReportsPage({ searchParams }: ReportsPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Laporan"
-        description="Tujuh laporan operasional dengan filter periode dan ekspor CSV — akses mengikuti role Anda."
+        description="Laporan operasional dengan filter periode dan ekspor CSV — akses mengikuti role Anda."
       />
       <Suspense fallback={<ReportsSkeleton />}>
         <ReportsSection searchParams={searchParams} />

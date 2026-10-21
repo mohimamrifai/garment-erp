@@ -22,7 +22,7 @@ export default function DepartmentsPage({ searchParams }: DepartmentsPageProps) 
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Departemen"
-        description="Master data departemen organisasi (PRD FR-03)."
+        description="Struktur departemen organisasi pabrik."
       />
       <Suspense fallback={<DepartmentsSectionSkeleton />}>
         <DepartmentsSection searchParams={searchParams} />

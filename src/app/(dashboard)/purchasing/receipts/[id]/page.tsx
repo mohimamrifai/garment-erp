@@ -238,7 +238,7 @@ async function MaterialReceiptDetailSection({ params }: MaterialReceiptDetailPag
             <EmptyHeader>
               <EmptyTitle>Belum ada mutasi stok</EmptyTitle>
               <EmptyDescription>
-                Mutasi stok tercatat otomatis oleh inventory engine saat penerimaan diposting.
+                Mutasi stok tercatat otomatis saat penerimaan diposting.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

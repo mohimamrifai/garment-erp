@@ -1,3 +1,11 @@
+import { ScrollText } from "lucide-react";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import {
   Table,
   TableBody,
@@ -7,21 +15,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDateTimeId } from "@/lib/utils/dates";
+import { formatAuditAction, formatAuditDetails, formatAuditEntity } from "../format";
 import type { AuditLogRow } from "../service";
 
-function detailsText(details: Record<string, unknown> | null): string {
-  if (!details || Object.keys(details).length === 0) return "—";
-  const text = JSON.stringify(details);
-  return text.length > 120 ? `${text.slice(0, 120)}…` : text;
-}
-
-/** Tabel audit log read-only (PRD M11). */
+/** Tabel audit log hanya-baca (PRD M11). */
 export function AuditLogTable({ rows }: { rows: AuditLogRow[] }) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
-        Belum ada catatan audit yang cocok.
-      </div>
+      <Empty className="rounded-lg border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <ScrollText />
+          </EmptyMedia>
+          <EmptyTitle>Belum ada catatan audit</EmptyTitle>
+          <EmptyDescription>
+            Catatan akan muncul setelah ada tindakan yang mengubah data atau status dokumen.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
@@ -39,7 +50,7 @@ export function AuditLogTable({ rows }: { rows: AuditLogRow[] }) {
         </TableHeader>
         <TableBody>
           {rows.map((row) => {
-            const detail = detailsText(row.details);
+            const detail = formatAuditDetails(row.details);
             return (
               <TableRow key={row.id}>
                 <TableCell className="font-mono text-xs whitespace-nowrap">
@@ -53,20 +64,27 @@ export function AuditLogTable({ rows }: { rows: AuditLogRow[] }) {
                     ) : null}
                   </div>
                 </TableCell>
-                <TableCell className="font-mono text-xs">{row.action}</TableCell>
-                <TableCell className="font-mono text-xs">
+                <TableCell className="text-xs">
+                  <span title={row.action}>{formatAuditAction(row.action)}</span>
+                </TableCell>
+                <TableCell className="text-xs">
                   <div className="flex flex-col">
-                    <span>{row.entityType}</span>
+                    <span>{formatAuditEntity(row.entityType)}</span>
                     {row.entityId ? (
-                      <span className="text-muted-foreground">{row.entityId.slice(0, 8)}</span>
+                      <span
+                        className="font-mono text-[11px] text-muted-foreground"
+                        title={row.entityId}
+                      >
+                        #{row.entityId.slice(0, 8)}
+                      </span>
                     ) : null}
                   </div>
                 </TableCell>
                 <TableCell
-                  className="max-w-[280px] truncate font-mono text-[11px] text-muted-foreground"
-                  title={detail}
+                  className="w-[320px] max-w-[320px] align-top font-mono text-[11px] whitespace-normal text-muted-foreground"
+                  title={detail === "—" ? undefined : detail}
                 >
-                  {detail}
+                  <div className="line-clamp-2 break-words">{detail}</div>
                 </TableCell>
               </TableRow>
             );

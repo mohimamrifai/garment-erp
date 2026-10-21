@@ -22,7 +22,7 @@ export default function ProductsPage({ searchParams }: ProductsPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Produk"
-        description="Model pakaian dan varian ukuran/warna (PRD FR-03)."
+        description="Model pakaian dan varian ukuran/warna."
       />
       <Suspense fallback={<ProductsSectionSkeleton />}>
         <ProductsSection searchParams={searchParams} />

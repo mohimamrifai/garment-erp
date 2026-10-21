@@ -72,7 +72,7 @@ Skenario presentasi per role ada di [`docs/demo.md`](./docs/demo.md).
 > F6 mencakup **E2E lengkap** (login tiap role, penolakan akses, order-to-shipment,
 > manajemen pengguna, audit log), **uji negatif keamanan API** (401/403/404/409/422,
 > IDOR, anti penggandaan), **audit otorisasi** + perbaikan temuan, **halaman Audit Log**
-> read-only, **seed demo lintas status** (draf, dalam produksi, siap kirim, terkirim
+> hanya-baca, **seed demo lintas status** (draf, dalam produksi, siap kirim, terkirim
 > sebagian, selesai, dibatalkan), **header keamanan**, README + [`docs/api.md`](docs/api.md),
 > serta verifikasi acceptance PRD §12.
 
@@ -238,10 +238,10 @@ src/
     api/v1/            # REST mutasi (route handler tipis: auth → Zod → service)
   components/
     ui/                # shadcn/ui (Base UI + preset base-nova)
-    layout/            # sidebar, header, breadcrumb, pagination, placeholder modul
-  modules/             # modul bisnis: schemas + service + components per domain
+    layout/            # sidebar, header, breadcrumb, pagination
+  modules/             # modul bisnis: schemas + service (dipecah bila besar) + components
     buyer/  user/      # F1: master data buyer & manajemen pengguna
-    audit/             # F6: penampil audit log (read-only)
+    audit/             # F6: penampil audit log (hanya-baca)
     master/            # F2: organisasi, supplier, satuan, material, produk, gudang, BOM
     sales-order/       # F2: sales order + status & transisinya
     purchasing/        # F3: purchase order, penerimaan material

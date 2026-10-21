@@ -39,6 +39,16 @@ export function formatDateId(value: Date | string | number): string {
   }).format(toDate(value));
 }
 
+/** Contoh: "14.05". */
+export function formatTimeId(value: Date | string | number): string {
+  return new Intl.DateTimeFormat("id-ID", {
+    timeZone: TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(toDate(value));
+}
+
 /** Tanggal hari ini (YYYY-MM-DD) menurut kalender Asia/Jakarta. */
 export function getTodayDate(date: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {

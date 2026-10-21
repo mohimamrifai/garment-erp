@@ -64,7 +64,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           </ol>
         </div>
         <p className="relative font-mono text-[11px] tracking-widest text-sidebar-foreground/50 uppercase">
-          ERP Manufaktur Garmen — v0.1
+          ERP Manufaktur Garmen
         </p>
       </aside>
 

@@ -23,7 +23,7 @@ export default function MaterialsPage({ searchParams }: MaterialsPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Material"
-        description="Bahan baku & aksesori dengan stok minimum (PRD FR-03, FR-06)."
+        description="Bahan baku & aksesori dengan stok minimum per gudang."
       />
       <Suspense fallback={<MaterialsSectionSkeleton />}>
         <MaterialsSection searchParams={searchParams} />

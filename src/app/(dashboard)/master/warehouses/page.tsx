@@ -22,7 +22,7 @@ export default function WarehousesPage({ searchParams }: WarehousesPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Gudang"
-        description="Gudang dan lokasi penyimpanan (PRD FR-03, FR-06)."
+        description="Gudang dan lokasi penyimpanan material serta barang jadi."
       />
       <Suspense fallback={<WarehousesSectionSkeleton />}>
         <WarehousesSection searchParams={searchParams} />

@@ -92,7 +92,7 @@ async function InventorySection({ searchParams }: InventoryPageProps) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ListSearch
-          placeholder="Cari kode/nama material atau SKU varian..."
+          placeholder="Cari material atau SKU varian..."
           ariaLabel="Cari saldo stok"
           status="all"
           hideStatus

@@ -112,8 +112,7 @@ test("admin melihat audit log dan memfilternya per aksi", async ({ page }) => {
   await expect(page.getByRole("row").nth(1)).toBeVisible();
 
   await page.getByLabel("Filter aksi").click();
-  await page.getByRole("option", { name: "purchase-order.create", exact: true }).click();
-  await expect(
-    page.getByRole("cell", { name: "purchase-order.create", exact: true }).first(),
-  ).toBeVisible();
+  await page.getByRole("option", { name: "Buat PO", exact: true }).click();
+  await expect(page.getByRole("cell", { name: "Buat PO", exact: true }).first()).toBeVisible();
+  await expect(page.getByTitle("purchase-order.create").first()).toBeVisible();
 });

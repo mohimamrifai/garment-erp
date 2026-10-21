@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatQty } from "@/lib/utils/currency";
-import { formatDateTimeId } from "@/lib/utils/dates";
+import { formatDateId, formatTimeId } from "@/lib/utils/dates";
 import type { InventoryTransactionListRow } from "../service";
 import { TransactionTypeBadge } from "./inventory-badges";
 
@@ -54,15 +54,13 @@ export function MovementsTable({ transactions }: MovementsTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-40">Waktu</TableHead>
+            <TableHead className="w-44">Waktu</TableHead>
             <TableHead className="w-36">Nomor</TableHead>
-            <TableHead className="w-44">Tipe</TableHead>
+            <TableHead className="w-36">Tipe</TableHead>
             <TableHead>Item</TableHead>
-            <TableHead className="w-44">Dari</TableHead>
-            <TableHead className="w-44">Ke</TableHead>
-            <TableHead className="w-24 text-right">Jumlah</TableHead>
+            <TableHead className="w-56">Lokasi</TableHead>
+            <TableHead className="w-20 text-right">Jumlah</TableHead>
             <TableHead className="w-44">Referensi</TableHead>
-            <TableHead className="w-36">Oleh</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -78,7 +76,13 @@ export function MovementsTable({ transactions }: MovementsTableProps) {
             return (
               <TableRow key={transaction.id}>
                 <TableCell className="nums font-mono text-xs text-muted-foreground">
-                  {formatDateTimeId(transaction.postedAt)}
+                  <div className="flex flex-col">
+                    <span>{formatDateId(transaction.postedAt)}</span>
+                    <span className="text-[11px]">
+                      {formatTimeId(transaction.postedAt)} WIB ·{" "}
+                      {transaction.postedByName ?? "Sistem"}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell className="nums font-mono text-[13px] font-medium">
                   {transaction.number}
@@ -94,20 +98,31 @@ export function MovementsTable({ transactions }: MovementsTableProps) {
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="text-[13px] text-muted-foreground">
-                  {transaction.fromLocationLabel ?? "—"}
-                </TableCell>
-                <TableCell className="text-[13px] text-muted-foreground">
-                  {transaction.toLocationLabel ?? "—"}
+                <TableCell className="text-[12px] text-muted-foreground">
+                  {transaction.fromLocationLabel || transaction.toLocationLabel ? (
+                    <div className="flex flex-col gap-0.5">
+                      {transaction.fromLocationLabel ? (
+                        <span>Dari {transaction.fromLocationLabel}</span>
+                      ) : null}
+                      {transaction.toLocationLabel ? (
+                        <span>Ke {transaction.toLocationLabel}</span>
+                      ) : null}
+                    </div>
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
                 <TableCell className="nums text-right font-mono text-sm font-medium">
                   {signedQuantity(transaction)}
                 </TableCell>
                 <TableCell className="text-[13px] text-muted-foreground">
-                  {transaction.notes ?? "—"}
-                </TableCell>
-                <TableCell className="text-[13px]">
-                  {transaction.postedByName ?? "Sistem"}
+                  {transaction.notes ? (
+                    <span className="block max-w-44 truncate" title={transaction.notes}>
+                      {transaction.notes}
+                    </span>
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
               </TableRow>
             );

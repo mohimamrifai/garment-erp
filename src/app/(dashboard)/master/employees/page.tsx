@@ -21,7 +21,7 @@ type EmployeesPageProps = {
 export default function EmployeesPage({ searchParams }: EmployeesPageProps) {
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Karyawan" description="Master data karyawan dasar (PRD FR-03)." />
+      <PageHeader title="Karyawan" description="Data karyawan untuk organisasi dan lini produksi." />
       <Suspense fallback={<EmployeesSectionSkeleton />}>
         <EmployeesSection searchParams={searchParams} />
       </Suspense>

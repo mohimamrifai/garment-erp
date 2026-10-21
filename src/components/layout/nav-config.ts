@@ -31,8 +31,6 @@ export type NavItem = {
   icon: LucideIcon;
   /** Role yang boleh melihat menu ini. */
   roles: readonly RoleCode[];
-  /** Label fase untuk modul yang belum diimplementasikan (placeholder). */
-  phase?: string;
 };
 
 export type NavSection = {
@@ -233,6 +231,7 @@ const PATH_LABELS: Record<string, string> = {
   "/inventory/movements": "Mutasi Stok",
   "/production": "Produksi",
   "/qc": "Quality Control",
+  "/finished-goods": "Barang Jadi",
   "/shipping": "Pengiriman",
   "/reports": "Laporan",
   "/settings": "Pengaturan",

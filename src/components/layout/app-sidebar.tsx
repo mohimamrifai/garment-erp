@@ -11,7 +11,6 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
@@ -71,7 +70,6 @@ export function AppSidebar({ user }: { user: SessionUserView }) {
                       <item.icon />
                       <span>{item.title}</span>
                     </SidebarMenuButton>
-                    {item.phase ? <SidebarMenuBadge>{item.phase}</SidebarMenuBadge> : null}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>

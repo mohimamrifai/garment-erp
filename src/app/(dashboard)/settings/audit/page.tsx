@@ -6,6 +6,7 @@ import { ListSearch } from "@/components/master-data/list-search";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requirePagePermission } from "@/lib/auth/session";
 import { AuditLogTable } from "@/modules/audit/components/audit-log-table";
+import { formatAuditAction } from "@/modules/audit/format";
 import { listAuditLogsQuerySchema } from "@/modules/audit/schemas";
 import { listAuditActions, listAuditLogs } from "@/modules/audit/service";
 
@@ -20,7 +21,7 @@ export default function AuditPage({ searchParams }: AuditPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Audit Log"
-        description="Jejak read-only tindakan penting: aktor, aksi, entitas, dan waktunya."
+        description="Jejak hanya-baca tindakan penting: aktor, aksi, entitas, dan waktunya."
       />
       <Suspense fallback={<AuditSectionSkeleton />}>
         <AuditSection searchParams={searchParams} />
@@ -74,7 +75,10 @@ async function AuditSection({ searchParams }: AuditPageProps) {
             key: "action",
             value: listParams.action ?? "all",
             allLabel: "Semua aksi",
-            options: actions.map((action) => ({ value: action, label: action })),
+            options: actions.map((action) => ({
+              value: action,
+              label: formatAuditAction(action),
+            })),
             widthClass: "w-56",
             "aria-label": "Filter aksi",
           },

@@ -22,7 +22,7 @@ export default function LinesPage({ searchParams }: LinesPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Lini Produksi"
-        description="Master data lini produksi untuk SPK (PRD FR-03, FR-08)."
+        description="Lini produksi yang dipakai saat membuat SPK."
       />
       <Suspense fallback={<LinesSectionSkeleton />}>
         <LinesSection searchParams={searchParams} />

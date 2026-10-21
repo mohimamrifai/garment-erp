@@ -20,7 +20,7 @@ type SuppliersPageProps = {
 export default function SuppliersPage({ searchParams }: SuppliersPageProps) {
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Supplier" description="Master data supplier bahan & aksesori (PRD FR-03)." />
+      <PageHeader title="Supplier" description="Master data supplier bahan & aksesori." />
       <Suspense fallback={<SuppliersSectionSkeleton />}>
         <SuppliersSection searchParams={searchParams} />
       </Suspense>

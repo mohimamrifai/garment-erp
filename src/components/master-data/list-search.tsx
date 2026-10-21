@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -73,7 +73,7 @@ export function ListSearch({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <form
-        className="relative w-full sm:w-72"
+        className="relative w-full sm:w-80"
         onSubmit={(event) => {
           event.preventDefault();
           applyParams({ q: value.trim() || null });
@@ -84,9 +84,22 @@ export function ListSearch({
           value={value}
           onChange={(event) => setValue(event.target.value)}
           placeholder={placeholder}
-          className="pl-8"
+          className="pr-8 pl-8"
           aria-label={ariaLabel}
         />
+        {value ? (
+          <button
+            type="button"
+            aria-label="Hapus pencarian"
+            onClick={() => {
+              setValue("");
+              applyParams({ q: null });
+            }}
+            className="absolute top-1/2 right-1.5 -translate-y-1/2 rounded-sm p-1 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+          >
+            <X className="size-3.5" />
+          </button>
+        ) : null}
       </form>
 
       {hideStatus ? null : (

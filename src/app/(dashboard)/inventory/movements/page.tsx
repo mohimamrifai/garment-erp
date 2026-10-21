@@ -80,9 +80,9 @@ async function MovementsSection({ searchParams }: MovementsPageProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-3">
         <ListSearch
-          placeholder="Cari nomor transaksi, material, atau catatan..."
+          placeholder="Cari transaksi atau material..."
           ariaLabel="Cari mutasi stok"
           status="all"
           hideStatus
@@ -116,7 +116,10 @@ async function MovementsSection({ searchParams }: MovementsPageProps) {
             },
           ]}
         />
-        <MovementsDateFilter from={listParams.from} to={listParams.to} />
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">Rentang tanggal</span>
+          <MovementsDateFilter from={listParams.from} to={listParams.to} />
+        </div>
       </div>
 
       <MovementsTable transactions={items} />
