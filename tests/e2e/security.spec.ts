@@ -107,6 +107,15 @@ test.describe("uji negatif keamanan API", () => {
     });
     expect(assistantLast.status()).toBe(422);
     expect((await assistantLast.json()).error.code).toBe("VALIDATION_ERROR");
+
+    const invalidContext = await request.post("/api/v1/assistant", {
+      data: {
+        messages: [{ role: "user", content: "Halo" }],
+        context: { pathname: "https://contoh.test/sales" },
+      },
+    });
+    expect(invalidContext.status()).toBe(422);
+    expect((await invalidContext.json()).error.code).toBe("VALIDATION_ERROR");
   });
 
   test("purchasing tidak dapat membaca/menulis modul pengiriman dan laporan role lain", async ({

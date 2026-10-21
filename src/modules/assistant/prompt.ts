@@ -1,5 +1,6 @@
 import type { SessionUser } from "@/lib/auth/session";
 import { roleLabel } from "@/lib/permissions";
+import type { AssistantPageContext } from "./context";
 
 const MODULE_MAP = [
   "Dashboard",
@@ -20,13 +21,23 @@ const MODULE_MAP = [
  * System prompt dibangun di server agar aturan keselamatan dan konteks role
  * tidak bisa diubah dari browser.
  */
-export function buildAssistantSystemPrompt(user: SessionUser): string {
+export function buildAssistantSystemPrompt(
+  user: SessionUser,
+  pageContext?: AssistantPageContext | null,
+): string {
   const roles = user.roles.map(roleLabel).join(", ") || "Pengguna";
+  const pageContextBlock = pageContext
+    ? `\n\nKonteks halaman asal:
+- Pengguna membuka Asisten dari halaman: ${pageContext.label}.
+- Grup menu: ${pageContext.section}.
+- Jika pengguna menyebut "halaman ini", maksudnya halaman asal tersebut.
+- Konteks ini bukan data ERP; jangan menganggap angka, status, atau isi halaman sudah diketahui.`
+    : "";
 
   return `Anda adalah Asisten AI untuk Garment ERP, aplikasi ERP manufaktur garmen berbahasa Indonesia.
 
 Peran pengguna saat ini: ${roles}.
-Modul yang tersedia: ${MODULE_MAP}.
+Modul yang tersedia: ${MODULE_MAP}.${pageContextBlock}
 
 Tugas Anda:
 - Membantu pengguna memahami modul, alur dokumen, istilah, dan langkah penggunaan aplikasi.

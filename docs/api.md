@@ -388,13 +388,19 @@ Body:
     { "role": "user", "content": "Di mana melihat stok material?" },
     { "role": "assistant", "content": "Buka menu Inventori." },
     { "role": "user", "content": "Apa arti mutasi stok?" }
-  ]
+  ],
+  "context": { "pathname": "/inventory" }
 }
 ```
 
 Aturan: maksimal 12 pesan, 6.000 karakter per pesan, total 16.000 karakter, dan pesan
 terakhir harus `user`. Server menambahkan system prompt sendiri; role `system` tidak
 diterima dari klien.
+
+`context.pathname` opsional dan hanya berisi path halaman asal tanpa query string.
+Server memetakan path tersebut ke modul yang terlihat oleh role pengguna; path yang
+tidak dikenal atau tidak boleh diakses role diabaikan. Konteks ini hanya membantu
+asisten memahami halaman asal, bukan memberi akses ke data di halaman tersebut.
 
 Respons:
 

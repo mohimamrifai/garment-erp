@@ -77,6 +77,42 @@ test.describe("autentikasi", () => {
     ).toBeVisible();
   });
 
+  test("admin membuka Asisten AI dari header dengan konteks halaman", async ({ page }) => {
+    let requestBody: { context?: { pathname?: string } } | null = null;
+
+    await page.route("**/api/v1/assistant", async (route) => {
+      requestBody = route.request().postDataJSON() as {
+        context?: { pathname?: string };
+      };
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            answer: "Anda sedang di Dashboard.",
+            model: "gpt-oss:20b",
+          },
+        }),
+      });
+    });
+
+    await login(page, ADMIN);
+    await page
+      .getByRole("link", { name: "Tanya Asisten AI tentang halaman ini", exact: true })
+      .click();
+
+    await expect(page).toHaveURL(/\/asisten-ai\?/);
+    expect(new URL(page.url()).searchParams.get("from")).toBe("/dashboard");
+
+    await page
+      .getByRole("textbox", { name: "Pertanyaan untuk Asisten AI", exact: true })
+      .fill("Halaman apa ini?");
+    await page.getByRole("button", { name: "Kirim", exact: true }).click();
+
+    await expect(page.getByText("Anda sedang di Dashboard.", { exact: true })).toBeVisible();
+    await expect.poll(() => requestBody?.context?.pathname).toBe("/dashboard");
+  });
+
   test("admin membuka dokumentasi dari sidebar", async ({ page }) => {
     await login(page, ADMIN);
     const docs = await revealSidebarLink(sidebarOf(page), "Dokumentasi");

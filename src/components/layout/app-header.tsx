@@ -4,7 +4,7 @@ import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Check, LogOut, Monitor, Moon, Sun, SunMoon } from "lucide-react";
+import { Check, LogOut, Monitor, Moon, Sparkles, Sun, SunMoon } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,7 @@ export function AppHeader({ user }: { user: SessionUserView }) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const crumbs = breadcrumbsForPath(pathname);
+  const showAssistantLink = pathname !== "/asisten-ai" && pathname !== "/akses-ditolak";
 
   async function handleSignOut() {
     await authClient.signOut();
@@ -84,9 +85,23 @@ export function AppHeader({ user }: { user: SessionUserView }) {
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-auto flex items-center gap-2">
+        {showAssistantLink ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label="Tanya Asisten AI tentang halaman ini"
+            title="Tanya Asisten AI tentang halaman ini"
+            render={<Link href={`/asisten-ai?from=${encodeURIComponent(pathname)}`} />}
+          >
+            <Sparkles />
+          </Button>
+        ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={<Button variant="ghost" size="icon" className="size-8" aria-label="Ubah tema" />}
+            render={
+              <Button variant="ghost" size="icon" className="size-8" aria-label="Ubah tema" />
+            }
           >
             <SunMoon />
           </DropdownMenuTrigger>

@@ -11,7 +11,7 @@ pnpm build
 pnpm test:e2e      # Playwright terhadap build produksi
 ```
 
-Hasil terakhir: **110 unit ✓ · 64 integration ✓ · 41 E2E ✓** (lihat §8).
+Hasil terakhir: **119 unit ✓ · 64 integration ✓ · 42 E2E ✓** (lihat §8).
 
 ---
 
@@ -90,15 +90,15 @@ Hasil terakhir: **110 unit ✓ · 64 integration ✓ · 41 E2E ✓** (lihat §8)
 
 | Lapis | Jumlah | Perintah |
 |---|---|---|
-| Unit | **110** ✓ | `pnpm test:unit` |
+| Unit | **119** ✓ | `pnpm test:unit` |
 | Integration | **64** ✓ | `pnpm test:integration` |
-| E2E (build produksi) | **41** ✓ | `pnpm build && pnpm test:e2e` |
+| E2E (build produksi) | **42** ✓ | `pnpm build && pnpm test:e2e` |
 
 E2E mencakup: 8 role (login/menu/penolakan), buyer, SO (buat → konfirmasi → batal),
 purchasing (PO → pesan → terima → posting), produksi (SPK → output → pemakaian → QC),
 order-to-shipment + 7 laporan CSV, manajemen pengguna (buat → nonaktif → aktif),
-larangan nonaktifkan akun sendiri, audit log, Asisten AI (kirim pertanyaan + validasi API),
-dan 10 skenario uji negatif keamanan API.
+larangan nonaktifkan akun sendiri, audit log, Asisten AI (kirim pertanyaan, konteks halaman,
+validasi API), dan 10 skenario uji negatif keamanan API.
 
 ## 9. Database migrations dapat dijalankan dari awal
 

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ApiError } from "@/lib/api/errors";
 import type { SessionUser } from "@/lib/auth/session";
+import { resolveAssistantPageContext } from "./context";
 import { buildAssistantSystemPrompt } from "./prompt";
 import type { AssistantRequest } from "./schemas";
 
@@ -89,6 +90,9 @@ export async function askAssistant(
   user: SessionUser,
 ): Promise<AssistantAnswer> {
   const { baseUrl, apiKey, model } = ollamaConfig();
+  const pageContext = input.context
+    ? resolveAssistantPageContext(input.context.pathname, user.roles)
+    : null;
 
   let response: Response;
   try {
@@ -101,7 +105,7 @@ export async function askAssistant(
       body: JSON.stringify({
         model,
         messages: [
-          { role: "system", content: buildAssistantSystemPrompt(user) },
+          { role: "system", content: buildAssistantSystemPrompt(user, pageContext) },
           ...input.messages,
         ],
         stream: false,

@@ -168,6 +168,11 @@ Batas pemakaian saat ini **20 pesan per jam per user**, disimpan di tabel `assis
 mengarang angka stok/transaksi; untuk data aktual pengguna diarahkan ke menu terkait. Tombol
 **Dokumen** masih berupa kerangka UI dan belum mengunggah file.
 
+Tombol **Tanya Asisten AI** di header halaman modul membuka `/asisten-ai?from=<pathname>`.
+Path halaman asal dikirim sebagai `context.pathname`; server hanya memakai path yang dikenal
+dan boleh diakses role pengguna. Konteks ini membantu asisten memahami halaman yang sedang
+dibicarakan, tetapi tidak memberi akses ke data di halaman tersebut.
+
 ## Skrip
 
 | Skrip                                                      | Fungsi                                           |
@@ -185,7 +190,7 @@ mengarang angka stok/transaksi; untuk data aktual pengguna diarahkan ke menu ter
 
 ## Testing
 
-Angka terakhir `pnpm verify` + `pnpm test:e2e`: **110 unit**, **64 integration**, **41 E2E** lulus.
+Angka terakhir `pnpm verify` + `pnpm test:e2e`: **119 unit**, **64 integration**, **42 E2E** lulus.
 
 - **Unit** — logika murni: matriks izin, format tanggal/periode dokumen Jakarta, skema Zod,
   transisi status sales order, purchase order, shipping, produksi, serta aritmetika & aturan
@@ -323,7 +328,7 @@ and Better Auth, covering the full order-to-shipment flow: sales orders, materia
 purchasing, warehouse receipts through a single-threaded inventory engine (immutable, idempotent
 transactions), production work orders with stage outputs, QC with rework, finished-goods lots and
 reservations, shipments with CSV reporting, role-based access control for 8 roles, and a read-only
-audit log. Quality gates: 110 unit, 64 integration, and 41 Playwright E2E tests against the
+audit log. Quality gates: 119 unit, 64 integration, and 42 Playwright E2E tests against the
 production build, plus API security negative tests (401/403/404/409/422, IDOR, idempotent double
 submit). Deployed as a demo on Vercel + Neon (Singapore) with a seeded, realistic dataset.
 

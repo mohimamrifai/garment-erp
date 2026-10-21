@@ -60,6 +60,7 @@ export function AssistantChat() {
     setError(null);
     setLoading(true);
 
+    const contextPath = new URLSearchParams(window.location.search).get("from");
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -71,6 +72,7 @@ export function AssistantChat() {
             role,
             content,
           })),
+          ...(contextPath ? { context: { pathname: contextPath } } : {}),
         }),
         signal: controller.signal,
       });

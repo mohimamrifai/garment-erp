@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RoleCode } from "@/lib/permissions";
+import { resolveAssistantPageContext } from "@/modules/assistant/context";
 import { toPlainAssistantText } from "@/modules/assistant/format";
 import { buildAssistantSystemPrompt } from "@/modules/assistant/prompt";
 import { assistantRequestSchema } from "@/modules/assistant/schemas";
@@ -83,6 +84,63 @@ describe("skema Asisten AI", () => {
     }));
     expect(assistantRequestSchema.safeParse({ messages }).success).toBe(false);
   });
+
+  it("menerima konteks pathname halaman internal", () => {
+    const parsed = assistantRequestSchema.safeParse({
+      messages: [{ role: "user", content: "Halaman apa ini?" }],
+      context: { pathname: "/sales/123" },
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("menolak konteks halaman yang bukan path internal", () => {
+    for (const pathname of [
+      "https://contoh.test/sales",
+      "//evil.test",
+      "/sales/../settings/users",
+      "/sales?status=DRAFT",
+    ]) {
+      expect(
+        assistantRequestSchema.safeParse({
+          messages: [{ role: "user", content: "Halaman apa ini?" }],
+          context: { pathname },
+        }).success,
+      ).toBe(false);
+    }
+  });
+});
+
+describe("konteks halaman Asisten AI", () => {
+  it("memetakan halaman detail ke modul dan grup menu", () => {
+    expect(resolveAssistantPageContext("/sales/123", ["ADMIN"])).toEqual({
+      label: "Detail Sales Order",
+      section: "Penjualan",
+    });
+  });
+
+  it("memilih menu paling spesifik dan mengenali halaman baru", () => {
+    expect(resolveAssistantPageContext("/purchasing/receipts/new", ["ADMIN"])).toEqual({
+      label: "Penerimaan Material Baru",
+      section: "Pembelian & Gudang",
+    });
+  });
+
+  it("mengenali halaman ubah", () => {
+    expect(resolveAssistantPageContext("/sales/123/edit", ["ADMIN"])).toEqual({
+      label: "Ubah Sales Order",
+      section: "Penjualan",
+    });
+  });
+
+  it("mengabaikan halaman yang tidak boleh diakses role", () => {
+    expect(resolveAssistantPageContext("/settings/users", ["QC_STAFF"])).toBeNull();
+  });
+
+  it("mengabaikan path yang tidak dikenal atau tidak valid", () => {
+    expect(resolveAssistantPageContext("/tidak-ada", ["ADMIN"])).toBeNull();
+    expect(resolveAssistantPageContext("/sales/../settings/users", ["ADMIN"])).toBeNull();
+    expect(resolveAssistantPageContext("https://contoh.test/sales", ["ADMIN"])).toBeNull();
+  });
 });
 
 describe("format jawaban Asisten AI", () => {
@@ -101,6 +159,16 @@ describe("prompt Asisten AI", () => {
     expect(prompt).toContain("Jangan mengarang angka stok");
     expect(prompt).not.toContain(process.env.API_KEY_OLLAMA);
   });
+
+  it("menyertakan konteks halaman asal bila tersedia", () => {
+    const prompt = buildAssistantSystemPrompt(USER, {
+      label: "Detail Sales Order",
+      section: "Penjualan",
+    });
+    expect(prompt).toContain("Konteks halaman asal");
+    expect(prompt).toContain("Detail Sales Order");
+    expect(prompt).toContain("Penjualan");
+  });
 });
 
 describe("service Asisten AI", () => {
@@ -116,7 +184,10 @@ describe("service Asisten AI", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await askAssistant(
-      { messages: [{ role: "user", content: "Di mana melihat stok?" }] },
+      {
+        messages: [{ role: "user", content: "Di mana melihat stok?" }],
+        context: { pathname: "/sales/123" },
+      },
       USER,
     );
 
@@ -141,7 +212,33 @@ describe("service Asisten AI", () => {
     expect(body.stream).toBe(false);
     expect(body.reasoning_effort).toBe("low");
     expect(body.messages[0]?.role).toBe("system");
+    expect(body.messages[0]?.content).toContain("Detail Sales Order");
+    expect(body.messages[0]?.content).toContain("Penjualan");
     expect(body.messages[1]).toEqual({ role: "user", content: "Di mana melihat stok?" });
+  });
+
+  it("mengabaikan konteks halaman yang tidak boleh diakses role", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        message: { content: "Menu tersebut tidak tersedia untuk role Anda." },
+        model: "gpt-oss:20b",
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await askAssistant(
+      {
+        messages: [{ role: "user", content: "Halaman apa ini?" }],
+        context: { pathname: "/settings/users" },
+      },
+      { ...USER, roles: ["QC_STAFF"] as RoleCode[] },
+    );
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(String(init.body)) as {
+      messages: { role: string; content: string }[];
+    };
+    expect(body.messages[0]?.content).not.toContain("Konteks halaman asal");
   });
 
   it("memetakan kuota Ollama habis menjadi error 402", async () => {
