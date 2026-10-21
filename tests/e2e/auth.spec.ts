@@ -44,7 +44,23 @@ test.describe("autentikasi", () => {
     await docs.click();
     await expect(page).toHaveURL(/\/docs$/);
     await expect(page.getByRole("heading", { name: "Dokumentasi", exact: true })).toBeVisible();
-    await expect(page.getByText("Peran & akses", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Panduan per role", exact: true }),
+    ).toBeVisible();
+
+    const roleGroup = page.getByRole("group", { name: "Pilih role" });
+    await expect(roleGroup.getByRole("button")).toHaveCount(8);
+    await expect(
+      roleGroup.getByRole("button", { name: "Administrator", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByText("Kelola akun dan role", { exact: true })).toBeVisible();
+
+    await roleGroup.getByRole("button", { name: "Sales", exact: true }).click();
+    await expect(roleGroup.getByRole("button", { name: "Sales", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(page.getByText("Daftarkan buyer", { exact: true })).toBeVisible();
   });
 
   test("keluar mengakhiri sesi dan mengembalikan ke halaman masuk", async ({ page }) => {

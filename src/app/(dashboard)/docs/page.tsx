@@ -3,12 +3,12 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Factory, PackageCheck, ShoppingCart, Truck, type LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSessionUser } from "@/lib/auth/session";
-import { can, ROLE_SEED, type Permission } from "@/lib/permissions";
+import { can, type Permission } from "@/lib/permissions";
+import { RoleGuide } from "./_components/role-guide";
 
 export const metadata: Metadata = { title: "Dokumentasi" };
 
@@ -60,10 +60,16 @@ const NOTES = [
 
 function DocsSkeleton() {
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, index) => (
-        <Skeleton key={index} className="h-44 rounded-xl" />
-      ))}
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-8 w-full max-w-2xl" />
+        <Skeleton className="h-80 rounded-xl" />
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton key={index} className="h-44 rounded-xl" />
+        ))}
+      </div>
     </div>
   );
 }
@@ -76,75 +82,67 @@ async function DocsContent() {
 
   return (
     <>
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {modules.map((module) => (
-          <Card key={module.href} className="flex flex-col">
-            <CardHeader>
-              <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                <module.icon className="size-4" />
-              </div>
-              <CardTitle>{module.title}</CardTitle>
-              <CardDescription>{module.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="mt-auto pt-0">
-              <Button
-                variant="outline"
-                size="sm"
-                nativeButton={false}
-                render={<Link href={module.href} />}
-              >
-                Buka modul
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+      <section className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-base font-semibold tracking-tight">Panduan per role</h2>
+          <p className="text-[13px] text-muted-foreground">
+            Pilih role untuk melihat langkah kerja, menu utama, dan catatan pentingnya.
+          </p>
+        </div>
+        <RoleGuide currentRoles={user.roles} />
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Peran & akses</CardTitle>
-            <CardDescription>
-              Menu dan tindakan mengikuti role yang diberikan oleh Administrator.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            {ROLE_SEED.map((role) => (
-              <div key={role.code} className="rounded-lg border bg-muted/30 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium">{role.name}</span>
-                  <Badge variant="outline" className="font-mono text-[10px]">
-                    {role.code}
-                  </Badge>
+      <section className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-base font-semibold tracking-tight">Jelajahi modul</h2>
+          <p className="text-[13px] text-muted-foreground">
+            Pintasan ke modul yang dapat Anda akses dengan role saat ini.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {modules.map((module) => (
+            <Card key={module.href} className="flex flex-col">
+              <CardHeader>
+                <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                  <module.icon className="size-4" />
                 </div>
-                <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
-                  {role.description}
-                </p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+                <CardTitle>{module.title}</CardTitle>
+                <CardDescription>{module.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="mt-auto pt-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  nativeButton={false}
+                  render={<Link href={module.href} />}
+                >
+                  Buka modul
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Catatan operasional</CardTitle>
-            <CardDescription>Hal penting agar data dan alur kerja tetap konsisten.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="flex flex-col gap-3">
-              {NOTES.map((note) => (
-                <li key={note} className="flex gap-2.5 text-[13px] leading-relaxed">
-                  <span
-                    className="mt-1.5 size-1.5 shrink-0 rounded-full bg-brand"
-                    aria-hidden="true"
-                  />
-                  <span className="text-muted-foreground">{note}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Catatan operasional</CardTitle>
+          <CardDescription>Hal penting agar data dan alur kerja tetap konsisten.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="grid gap-3 md:grid-cols-2">
+            {NOTES.map((note) => (
+              <li key={note} className="flex gap-2.5 text-[13px] leading-relaxed">
+                <span
+                  className="mt-1.5 size-1.5 shrink-0 rounded-full bg-brand"
+                  aria-hidden="true"
+                />
+                <span className="text-muted-foreground">{note}</span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
     </>
   );
 }
@@ -154,7 +152,7 @@ export default function DocsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Dokumentasi"
-        description="Panduan singkat penggunaan modul dan akses per role di Garment ERP."
+        description="Panduan penggunaan per role dan ringkasan modul Garment ERP."
       />
       <Suspense fallback={<DocsSkeleton />}>
         <DocsContent />
