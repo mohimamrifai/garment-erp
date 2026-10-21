@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUp, FileText, Image as ImageIcon, MoreHorizontal, Plus } from "lucide-react";
+import { ArrowUp, FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -46,14 +46,6 @@ export function AssistantInput() {
             <DropdownMenuItem>
               <FileText />
               Dokumen
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <ImageIcon />
-              Gambar
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <MoreHorizontal />
-              Lainnya
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
