@@ -149,6 +149,25 @@ Pada deployment non-demo (variabel tidak diisi), tombol disembunyikan.
    *posting* (atomik: melepas alokasi, mengeluarkan stok, memperbarui status SO).
 6. **Dashboard & 7 laporan** merangkum seluruh alur; **Administrator** memantau audit log.
 
+## Asisten AI
+
+Halaman `/asisten-ai` memakai **Ollama Cloud** dengan model default `gpt-oss:20b` — model MoE
+20B total dengan 3.6B parameter aktif, context 128K, dan dukungan tool calling. Jawaban dikirim
+lewat route server `POST /api/v1/assistant`; API key tidak pernah dikirim ke browser.
+
+Konfigurasi server:
+
+```bash
+API_KEY_OLLAMA="..."              # https://ollama.com/settings/keys
+OLLAMA_BASE_URL="https://ollama.com"
+OLLAMA_MODEL="gpt-oss:20b"        # opsional; default sudah gpt-oss:20b
+```
+
+Batas pemakaian saat ini **20 pesan per jam per user**, disimpan di tabel `assistant_usage`
+(tanpa menyimpan isi percakapan). Asisten belum terhubung ke database ERP, jadi ia tidak boleh
+mengarang angka stok/transaksi; untuk data aktual pengguna diarahkan ke menu terkait. Tombol
+**Dokumen** masih berupa kerangka UI dan belum mengunggah file.
+
 ## Skrip
 
 | Skrip                                                      | Fungsi                                           |
@@ -166,7 +185,7 @@ Pada deployment non-demo (variabel tidak diisi), tombol disembunyikan.
 
 ## Testing
 
-Angka terakhir `pnpm verify` + `pnpm test:e2e`: **87 unit**, **62 integration**, **37 E2E** lulus.
+Angka terakhir `pnpm verify` + `pnpm test:e2e`: **109 unit**, **64 integration**, **41 E2E** lulus.
 
 - **Unit** — logika murni: matriks izin, format tanggal/periode dokumen Jakarta, skema Zod,
   transisi status sales order, purchase order, shipping, produksi, serta aritmetika & aturan
@@ -212,7 +231,8 @@ sedang berjalan). Rate limit Better Auth dimatikan hanya untuk E2E lewat env
 
 - **Vercel** — project region `sin1` (Singapore), env vars: `DATABASE_URL` (pooled),
   `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (URL publik deployment), `NEXT_PUBLIC_DEMO_MODE=1`
-  untuk demo. Deploy produksi: `vercel deploy --prod --yes` (push ke GitHub tidak otomatis
+  untuk demo, serta `API_KEY_OLLAMA` untuk Asisten AI (opsional: `OLLAMA_MODEL`,
+  `OLLAMA_BASE_URL`). Deploy produksi: `vercel deploy --prod --yes` (push ke GitHub tidak otomatis
   men-deploy).
 - Runtime aplikasi hanya butuh **pooled** URL; migrasi DDL lebih aman lewat **direct** URL.
 
@@ -303,7 +323,7 @@ and Better Auth, covering the full order-to-shipment flow: sales orders, materia
 purchasing, warehouse receipts through a single-threaded inventory engine (immutable, idempotent
 transactions), production work orders with stage outputs, QC with rework, finished-goods lots and
 reservations, shipments with CSV reporting, role-based access control for 8 roles, and a read-only
-audit log. Quality gates: 87 unit, 62 integration, and 37 Playwright E2E tests against the
+audit log. Quality gates: 109 unit, 64 integration, and 41 Playwright E2E tests against the
 production build, plus API security negative tests (401/403/404/409/422, IDOR, idempotent double
 submit). Deployed as a demo on Vercel + Neon (Singapore) with a seeded, realistic dataset.
 

@@ -50,6 +50,33 @@ test.describe("autentikasi", () => {
     ).toBeVisible();
   });
 
+  test("admin mengirim pertanyaan ke Asisten AI dan melihat jawaban", async ({ page }) => {
+    await page.route("**/api/v1/assistant", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            answer: "Stok dapat dilihat di menu Inventori.",
+            model: "gpt-oss:20b",
+          },
+        }),
+      });
+    });
+
+    await login(page, ADMIN);
+    await page.goto("/asisten-ai");
+    await page
+      .getByRole("textbox", { name: "Pertanyaan untuk Asisten AI", exact: true })
+      .fill("Di mana melihat stok?");
+    await page.getByRole("button", { name: "Kirim", exact: true }).click();
+
+    await expect(page.getByText("Di mana melihat stok?", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Stok dapat dilihat di menu Inventori.", { exact: true }),
+    ).toBeVisible();
+  });
+
   test("admin membuka dokumentasi dari sidebar", async ({ page }) => {
     await login(page, ADMIN);
     const docs = await revealSidebarLink(sidebarOf(page), "Dokumentasi");

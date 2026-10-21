@@ -87,6 +87,26 @@ test.describe("uji negatif keamanan API", () => {
     const write = await request.post("/api/v1/shipments", { data: {} });
     expect(write.status()).toBe(401);
     expect((await write.json()).error.code).toBe("UNAUTHENTICATED");
+
+    const assistant = await request.post("/api/v1/assistant", {
+      data: { messages: [{ role: "user", content: "Halo" }] },
+    });
+    expect(assistant.status()).toBe(401);
+    expect((await assistant.json()).error.code).toBe("UNAUTHENTICATED");
+  });
+
+  test("Asisten AI menolak percakapan tidak valid sebelum memanggil model", async ({ request }) => {
+    await signIn(request, "admin@garment.local");
+
+    const empty = await request.post("/api/v1/assistant", { data: { messages: [] } });
+    expect(empty.status()).toBe(422);
+    expect((await empty.json()).error.code).toBe("VALIDATION_ERROR");
+
+    const assistantLast = await request.post("/api/v1/assistant", {
+      data: { messages: [{ role: "assistant", content: "Halo" }] },
+    });
+    expect(assistantLast.status()).toBe(422);
+    expect((await assistantLast.json()).error.code).toBe("VALIDATION_ERROR");
   });
 
   test("purchasing tidak dapat membaca/menulis modul pengiriman dan laporan role lain", async ({

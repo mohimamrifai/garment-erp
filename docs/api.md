@@ -27,6 +27,11 @@ Better Auth; halaman dan API membaca sesi yang sama.
 | 404 | `NOT_FOUND` | Dokumen tidak ditemukan (termasuk ID bukan UUID). |
 | 409 | `CONFLICT` | Melanggar aturan status/kuantitas/saldo (mis. melebihi sisa, sudah diposting). |
 | 422 | `VALIDATION_ERROR` | Gagal validasi Zod; `details.fields[]` berisi path + pesan Bahasa Indonesia. |
+| 429 | `ASSISTANT_RATE_LIMITED` | Kuota Asisten AI per user habis (20 pesan/jam). |
+| 402 | `ASSISTANT_QUOTA_EXHAUSTED` | Kredit/kuota Ollama Cloud habis. |
+| 502 | `ASSISTANT_UNAVAILABLE` | Ollama Cloud tidak dapat dihubungi atau respons tidak valid. |
+| 503 | `ASSISTANT_NOT_CONFIGURED` | `API_KEY_OLLAMA` belum di-set di server. |
+| 504 | `ASSISTANT_TIMEOUT` | Ollama Cloud melewati batas waktu 45 detik. |
 | 500 | `INTERNAL_ERROR` | Kesalahan tak terduga (detail hanya di log server). |
 
 ## 2. Autentikasi (Better Auth)
@@ -368,6 +373,50 @@ Role valid: `ADMIN`, `MANAGER`, `SALES`, `PURCHASING`, `WAREHOUSE`,
 Respons read-only berisi `action`, `entityType`, `entityId`, `details`, `createdAt`,
 dan aktor. Halaman UI: `/settings/audit` (tabel + pencarian + filter aksi). Audit log
 tidak menyediakan operasi ubah/hapus.
+
+### 3.13 Asisten AI
+
+| Method | Path | Izin |
+|---|---|---|
+| POST | `/api/v1/assistant` | Cukup login (semua role) |
+
+Body:
+
+```json
+{
+  "messages": [
+    { "role": "user", "content": "Di mana melihat stok material?" },
+    { "role": "assistant", "content": "Buka menu Inventori." },
+    { "role": "user", "content": "Apa arti mutasi stok?" }
+  ]
+}
+```
+
+Aturan: maksimal 12 pesan, 6.000 karakter per pesan, total 16.000 karakter, dan pesan
+terakhir harus `user`. Server menambahkan system prompt sendiri; role `system` tidak
+diterima dari klien.
+
+Respons:
+
+```json
+{
+  "data": {
+    "answer": "Mutasi stok adalah riwayat pergerakan barang masuk/keluar.",
+    "model": "gpt-oss:20b",
+    "usage": { "promptTokens": 420, "completionTokens": 38 }
+  },
+  "meta": { "remaining": 19, "resetAt": "2026-10-21T16:00:00.000Z" }
+}
+```
+
+Kuota per user: 20 request per jam. Isi percakapan tidak disimpan; tabel
+`assistant_usage` hanya menyimpan hitungan. API key Ollama hanya dibaca di server.
+
+```bash
+curl -b cookie.txt -X POST http://localhost:3000/api/v1/assistant \
+  -H 'Content-Type: application/json' \
+  -d '{"messages":[{"role":"user","content":"Apa itu SPK?"}]}'
+```
 
 ## 4. Catatan implementasi
 

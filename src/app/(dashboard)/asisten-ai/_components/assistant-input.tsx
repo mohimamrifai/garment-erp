@@ -10,20 +10,52 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+
+const MAX_INPUT_CHARS = 4_000;
+
+type AssistantInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  loading?: boolean;
+};
 
 /**
  * Input Asisten AI dengan tombol lampiran dan kirim.
- * Aksi tombol belum terhubung ke backend; hanya kerangka UI.
+ * Tombol "Dokumen" masih berupa kerangka UI; pengiriman pertanyaan sudah aktif.
  */
-export function AssistantInput() {
+export function AssistantInput({
+  value,
+  onChange,
+  onSubmit,
+  loading = false,
+}: AssistantInputProps) {
+  const canSubmit = value.trim().length > 0 && !loading;
+
   return (
-    <div className="relative w-full">
+    <form
+      className="relative w-full"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit();
+      }}
+    >
       <Input
         type="text"
         name="question"
         aria-label="Pertanyaan untuk Asisten AI"
         placeholder="Tanyakan sesuatu..."
         autoComplete="off"
+        maxLength={MAX_INPUT_CHARS}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+            event.preventDefault();
+            onSubmit();
+          }
+        }}
         className="h-12 rounded-xl pr-12 pl-11 text-base shadow-sm"
       />
 
@@ -52,13 +84,14 @@ export function AssistantInput() {
       </DropdownMenu>
 
       <Button
-        type="button"
+        type="submit"
         size="icon"
         aria-label="Kirim"
+        disabled={!canSubmit}
         className="absolute top-1/2 right-1.5 size-8 -translate-y-1/2 rounded-lg"
       >
-        <ArrowUp />
+        {loading ? <Spinner className="size-4" /> : <ArrowUp />}
       </Button>
-    </div>
+    </form>
   );
 }

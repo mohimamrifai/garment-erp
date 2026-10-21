@@ -1,6 +1,7 @@
 export * from "./auth";
 export * from "./rbac";
 export * from "./audit";
+export * from "./assistant";
 export * from "./documents";
 export * from "./sales";
 export * from "./master-data";
