@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RoleCode } from "@/lib/permissions";
+import { toPlainAssistantText } from "@/modules/assistant/format";
 import { buildAssistantSystemPrompt } from "@/modules/assistant/prompt";
 import { assistantRequestSchema } from "@/modules/assistant/schemas";
 import { askAssistant } from "@/modules/assistant/service";
@@ -81,6 +82,14 @@ describe("skema Asisten AI", () => {
       content: "x".repeat(1_400),
     }));
     expect(assistantRequestSchema.safeParse({ messages }).success).toBe(false);
+  });
+});
+
+describe("format jawaban Asisten AI", () => {
+  it("membersihkan penanda Markdown ringan tanpa merusak teks", () => {
+    expect(
+      toPlainAssistantText("Buka **Inventori** lalu `Mutasi Stok`.\n### Langkah\n- Satu\n- Dua"),
+    ).toBe("Buka Inventori lalu Mutasi Stok.\nLangkah\n• Satu\n• Dua");
   });
 });
 

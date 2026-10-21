@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ApiRequestError, requestJson } from "@/lib/api/client";
 import { cn } from "cn";
 import { Spinner } from "@/components/ui/spinner";
+import { toPlainAssistantText } from "@/modules/assistant/format";
 import { AssistantInput } from "./assistant-input";
 
 type ChatRole = "user" | "assistant";
@@ -134,7 +135,9 @@ export function AssistantChat() {
                       : "text-foreground",
                   )}
                 >
-                  {message.content}
+                  {message.role === "assistant"
+                    ? toPlainAssistantText(message.content)
+                    : message.content}
                 </div>
               </div>
             ))}

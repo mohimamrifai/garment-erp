@@ -11,7 +11,7 @@ pnpm build
 pnpm test:e2e      # Playwright terhadap build produksi
 ```
 
-Hasil terakhir: **109 unit ✓ · 64 integration ✓ · 41 E2E ✓** (lihat §8).
+Hasil terakhir: **110 unit ✓ · 64 integration ✓ · 41 E2E ✓** (lihat §8).
 
 ---
 
@@ -90,7 +90,7 @@ Hasil terakhir: **109 unit ✓ · 64 integration ✓ · 41 E2E ✓** (lihat §8)
 
 | Lapis | Jumlah | Perintah |
 |---|---|---|
-| Unit | **109** ✓ | `pnpm test:unit` |
+| Unit | **110** ✓ | `pnpm test:unit` |
 | Integration | **64** ✓ | `pnpm test:integration` |
 | E2E (build produksi) | **41** ✓ | `pnpm build && pnpm test:e2e` |
 

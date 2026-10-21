@@ -1,0 +1,11 @@
+# File environment hanya untuk lokal. Nilai produksi/preview diatur di
+# Vercel Project Settings, bukan diunggah bersama source deployment.
+.env
+.env.*
+!.env.example
+
+# Artefak lokal yang tidak dibutuhkan saat build Vercel.
+.next/
+test-results/
+playwright-report/
+blob-report/
