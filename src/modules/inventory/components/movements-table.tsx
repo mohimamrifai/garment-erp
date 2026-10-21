@@ -1,5 +1,11 @@
 import { ArrowLeftRight } from "lucide-react";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import {
   Table,
   TableBody,
@@ -19,13 +25,13 @@ type MovementsTableProps = {
 
 /** Arah kuantitas per jenis mutasi: masuk (+), keluar (−), transfer netral. */
 function signedQuantity(transaction: InventoryTransactionListRow): string {
-  if (transaction.transactionType === "RECEIPT" || transaction.transactionType === "ADJUSTMENT_IN") {
+  if (
+    transaction.transactionType === "RECEIPT" ||
+    transaction.transactionType === "ADJUSTMENT_IN"
+  ) {
     return `+${formatQty(transaction.quantity)}`;
   }
-  if (
-    transaction.transactionType === "ISSUE" ||
-    transaction.transactionType === "ADJUSTMENT_OUT"
-  ) {
+  if (transaction.transactionType === "ISSUE" || transaction.transactionType === "ADJUSTMENT_OUT") {
     return `−${formatQty(transaction.quantity)}`;
   }
   return formatQty(transaction.quantity);
@@ -73,6 +79,7 @@ export function MovementsTable({ transactions }: MovementsTableProps) {
               transaction.itemType === "MATERIAL"
                 ? transaction.materialCode
                 : transaction.variantSku;
+            const unit = transaction.itemType === "MATERIAL" ? (transaction.unitCode ?? "") : "PCS";
             return (
               <TableRow key={transaction.id}>
                 <TableCell className="nums font-mono text-xs text-muted-foreground">
@@ -113,7 +120,14 @@ export function MovementsTable({ transactions }: MovementsTableProps) {
                   )}
                 </TableCell>
                 <TableCell className="nums text-right font-mono text-sm font-medium">
-                  {signedQuantity(transaction)}
+                  <span className="inline-flex items-baseline justify-end gap-1">
+                    {signedQuantity(transaction)}
+                    {unit ? (
+                      <span className="text-[10px] font-normal tracking-wide text-muted-foreground">
+                        {unit}
+                      </span>
+                    ) : null}
+                  </span>
                 </TableCell>
                 <TableCell className="text-[13px] text-muted-foreground">
                   {transaction.notes ? (

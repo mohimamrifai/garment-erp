@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { History } from "lucide-react";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import {
   Table,
   TableBody,
@@ -46,7 +52,7 @@ export function FinishedGoodsLotsTable({ lots }: { lots: FinishedGoodsLotRow[] }
         <TableBody>
           {lots.map((lot) => (
             <TableRow key={lot.id}>
-              <TableCell className="whitespace-nowrap font-mono text-[12px] text-muted-foreground tabular-nums">
+              <TableCell className="font-mono text-[12px] whitespace-nowrap text-muted-foreground tabular-nums">
                 {formatDateTimeId(lot.createdAt)}
               </TableCell>
               <TableCell>
@@ -58,7 +64,12 @@ export function FinishedGoodsLotsTable({ lots }: { lots: FinishedGoodsLotRow[] }
                 </div>
               </TableCell>
               <TableCell className="text-right font-mono font-medium tabular-nums">
-                {Number(lot.quantity).toLocaleString("id-ID")}
+                <span className="inline-flex items-baseline justify-end gap-1">
+                  {Number(lot.quantity).toLocaleString("id-ID")}
+                  <span className="text-[10px] font-normal tracking-wide text-muted-foreground">
+                    PCS
+                  </span>
+                </span>
               </TableCell>
               <TableCell>
                 <Link

@@ -11,10 +11,7 @@ import { formatNumber } from "@/lib/utils/currency";
 import { FinishedGoodsLotsTable } from "@/modules/finished-goods/components/finished-goods-lots-table";
 import { FinishedGoodsTable } from "@/modules/finished-goods/components/finished-goods-table";
 import { listFinishedGoodsQuerySchema } from "@/modules/finished-goods/schemas";
-import {
-  listFinishedGoodsLots,
-  listFinishedGoodsStock,
-} from "@/modules/finished-goods/service";
+import { listFinishedGoodsLots, listFinishedGoodsStock } from "@/modules/finished-goods/service";
 import { listWarehouseOptions } from "@/modules/master/warehouse/service";
 
 export const metadata: Metadata = { title: "Barang Jadi" };
@@ -65,9 +62,7 @@ async function FinishedGoodsSection({ searchParams }: FinishedGoodsPageProps) {
     location: typeof params.location === "string" ? params.location : undefined,
     page: params.page,
   });
-  const listParams = parsed.success
-    ? parsed.data
-    : listFinishedGoodsQuerySchema.parse({});
+  const listParams = parsed.success ? parsed.data : listFinishedGoodsQuerySchema.parse({});
 
   const [{ items, total, totals }, warehouses, lots] = await Promise.all([
     listFinishedGoodsStock(listParams),
@@ -87,7 +82,7 @@ async function FinishedGoodsSection({ searchParams }: FinishedGoodsPageProps) {
         <Card size="sm">
           <CardHeader className="flex-row items-center justify-between gap-3">
             <div className="flex flex-col gap-0.5">
-              <CardDescription>Stok fisik</CardDescription>
+              <CardDescription>Stok fisik (pcs)</CardDescription>
               <CardTitle className="font-mono text-2xl tabular-nums">
                 {formatNumber(totals.onHand)}
               </CardTitle>
@@ -98,7 +93,7 @@ async function FinishedGoodsSection({ searchParams }: FinishedGoodsPageProps) {
         <Card size="sm">
           <CardHeader className="flex-row items-center justify-between gap-3">
             <div className="flex flex-col gap-0.5">
-              <CardDescription>Tersedia untuk dialokasikan</CardDescription>
+              <CardDescription>Tersedia untuk dialokasikan (pcs)</CardDescription>
               <CardTitle className="font-mono text-2xl tabular-nums">
                 {formatNumber(totals.available)}
               </CardTitle>

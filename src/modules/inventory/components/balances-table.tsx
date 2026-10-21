@@ -1,6 +1,12 @@
 import { Boxes } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import {
   Table,
   TableBody,
@@ -66,8 +72,9 @@ export function BalancesTable({ balances }: BalancesTableProps) {
                 : (balance.productName ?? "—");
             const secondary =
               balance.itemType === "MATERIAL"
-                ? `${balance.materialCode ?? "—"} · ${balance.unitCode ?? ""}`
+                ? (balance.materialCode ?? "—")
                 : `${balance.variantSku ?? "—"} · ${balance.size ?? ""}/${balance.color ?? ""}`;
+            const unit = balance.itemType === "MATERIAL" ? (balance.unitCode ?? "") : "PCS";
             return (
               <TableRow key={balance.id}>
                 <TableCell>
@@ -88,23 +95,46 @@ export function BalancesTable({ balances }: BalancesTableProps) {
                   </span>
                 </TableCell>
                 <TableCell className="nums text-right font-mono text-sm font-medium">
-                  {formatQty(balance.quantityOnHand)}
+                  <span className="inline-flex items-baseline justify-end gap-1">
+                    {formatQty(balance.quantityOnHand)}
+                    {unit ? (
+                      <span className="text-[10px] font-normal tracking-wide text-muted-foreground">
+                        {unit}
+                      </span>
+                    ) : null}
+                  </span>
                 </TableCell>
                 <TableCell className="nums text-right font-mono text-sm text-muted-foreground">
-                  {formatQty(balance.quantityReserved)}
+                  <span className="inline-flex items-baseline justify-end gap-1">
+                    {formatQty(balance.quantityReserved)}
+                    {unit ? (
+                      <span className="text-[10px] font-normal tracking-wide">{unit}</span>
+                    ) : null}
+                  </span>
                 </TableCell>
                 <TableCell className="nums text-right font-mono text-sm">
-                  {formatQty(balance.quantityAvailable)}
+                  <span className="inline-flex items-baseline justify-end gap-1">
+                    {formatQty(balance.quantityAvailable)}
+                    {unit ? (
+                      <span className="text-[10px] font-normal tracking-wide text-muted-foreground">
+                        {unit}
+                      </span>
+                    ) : null}
+                  </span>
                 </TableCell>
                 <TableCell>
                   {low ? (
-                    <Badge variant="outline" className="border-destructive/40 bg-destructive/10 text-destructive">
+                    <Badge
+                      variant="outline"
+                      className="border-destructive/40 bg-destructive/10 text-destructive"
+                    >
                       <span aria-hidden className="size-1.5 rounded-full bg-destructive" />
                       Di bawah minimum
                     </Badge>
                   ) : balance.itemType === "MATERIAL" && Number(balance.minimumStock) > 0 ? (
                     <span className="nums font-mono text-[11px] text-muted-foreground">
                       min. {formatQty(balance.minimumStock ?? "0")}
+                      {unit ? ` ${unit}` : ""}
                     </span>
                   ) : (
                     <span className="text-xs text-muted-foreground">—</span>

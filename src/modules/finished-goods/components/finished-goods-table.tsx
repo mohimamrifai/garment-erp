@@ -1,6 +1,12 @@
 import { PackageSearch } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import {
   Table,
   TableBody,
@@ -15,6 +21,19 @@ import type { FinishedGoodsStockRow } from "../service";
 type FinishedGoodsTableProps = {
   rows: FinishedGoodsStockRow[];
 };
+
+const FINISHED_GOOD_UNIT = "PCS";
+
+function StockQuantity({ value }: { value: number | string }) {
+  return (
+    <span className="inline-flex items-baseline justify-end gap-1">
+      {formatNumber(value)}
+      <span className="text-[10px] font-normal tracking-wide text-muted-foreground">
+        {FINISHED_GOOD_UNIT}
+      </span>
+    </span>
+  );
+}
 
 /** Tabel saldo barang jadi per varian dan lokasi. */
 export function FinishedGoodsTable({ rows }: FinishedGoodsTableProps) {
@@ -68,15 +87,19 @@ export function FinishedGoodsTable({ rows }: FinishedGoodsTableProps) {
                   </div>
                 </TableCell>
                 <TableCell className="text-right font-mono tabular-nums">
-                  {formatNumber(row.quantityOnHand)}
+                  <StockQuantity value={row.quantityOnHand} />
                 </TableCell>
                 <TableCell className="text-right font-mono text-muted-foreground tabular-nums">
-                  {Number(row.quantityReserved) > 0 ? formatNumber(row.quantityReserved) : "—"}
+                  {Number(row.quantityReserved) > 0 ? (
+                    <StockQuantity value={row.quantityReserved} />
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   {available > 0 ? (
                     <span className="font-mono font-medium tabular-nums">
-                      {formatNumber(available)}
+                      <StockQuantity value={available} />
                     </span>
                   ) : (
                     <Badge variant="outline" className="text-muted-foreground">

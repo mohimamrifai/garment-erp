@@ -161,6 +161,7 @@ export type InventoryTransactionListRow = {
   variantId: string | null;
   variantSku: string | null;
   productName: string | null;
+  unitCode: string | null;
   transactionType: InventoryTransaction["transactionType"];
   quantity: string;
   fromLocationId: string | null;
@@ -205,8 +206,10 @@ export async function listInventoryTransactions(
       ),
     );
   }
-  if (params.type !== "all") conditions.push(eq(inventoryTransactions.transactionType, params.type));
-  if (params.itemType !== "all") conditions.push(eq(inventoryTransactions.itemType, params.itemType));
+  if (params.type !== "all")
+    conditions.push(eq(inventoryTransactions.transactionType, params.type));
+  if (params.itemType !== "all")
+    conditions.push(eq(inventoryTransactions.itemType, params.itemType));
   if (params.location) {
     conditions.push(
       or(
@@ -215,8 +218,10 @@ export async function listInventoryTransactions(
       ),
     );
   }
-  if (params.from) conditions.push(gte(inventoryTransactions.postedAt, jakartaDayStart(params.from)));
-  if (params.to) conditions.push(lt(inventoryTransactions.postedAt, jakartaDayEndExclusive(params.to)));
+  if (params.from)
+    conditions.push(gte(inventoryTransactions.postedAt, jakartaDayStart(params.from)));
+  if (params.to)
+    conditions.push(lt(inventoryTransactions.postedAt, jakartaDayEndExclusive(params.to)));
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
   const from = db
@@ -230,6 +235,7 @@ export async function listInventoryTransactions(
       variantId: inventoryTransactions.variantId,
       variantSku: productVariants.variantSku,
       productName: products.name,
+      unitCode: unitsOfMeasure.code,
       transactionType: inventoryTransactions.transactionType,
       quantity: inventoryTransactions.quantity,
       fromLocationId: inventoryTransactions.fromLocationId,
@@ -249,6 +255,7 @@ export async function listInventoryTransactions(
     })
     .from(inventoryTransactions)
     .leftJoin(materials, eq(inventoryTransactions.materialId, materials.id))
+    .leftJoin(unitsOfMeasure, eq(materials.unitId, unitsOfMeasure.id))
     .leftJoin(productVariants, eq(inventoryTransactions.variantId, productVariants.id))
     .leftJoin(products, eq(productVariants.productId, products.id))
     .leftJoin(fromLocation, eq(inventoryTransactions.fromLocationId, fromLocation.id))
@@ -379,10 +386,7 @@ export async function transferStock(
 ): Promise<InventoryTransaction> {
   return db.transaction(async (tx) => {
     const item = await resolveItemRef(tx, input);
-    const locations = await assertLocationsActive(tx, [
-      input.fromLocationId,
-      input.toLocationId,
-    ]);
+    const locations = await assertLocationsActive(tx, [input.fromLocationId, input.toLocationId]);
 
     const result = await postMovement(tx, {
       ...toEngineItemRef(item),
