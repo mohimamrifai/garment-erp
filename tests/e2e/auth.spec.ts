@@ -32,10 +32,22 @@ test.describe("autentikasi", () => {
     await login(page, ADMIN);
     await expect(page.getByText(/Selamat datang/)).toBeVisible();
     const sidebar = sidebarOf(page);
+    await expectSidebarLink(sidebar, "Asisten AI");
     await expectSidebarLink(sidebar, "Buyer");
     await expectSidebarLink(sidebar, "Pengguna");
     await expectSidebarLink(sidebar, "Laporan");
     await expectSidebarLink(sidebar, "Dokumentasi");
+  });
+
+  test("admin membuka Asisten AI dari sidebar", async ({ page }) => {
+    await login(page, ADMIN);
+    const assistant = await revealSidebarLink(sidebarOf(page), "Asisten AI");
+    await assistant.click();
+    await expect(page).toHaveURL(/\/asisten-ai$/);
+    await expect(page.getByRole("heading", { name: "Asisten AI", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("textbox", { name: "Pertanyaan untuk Asisten AI", exact: true }),
+    ).toBeVisible();
   });
 
   test("admin membuka dokumentasi dari sidebar", async ({ page }) => {

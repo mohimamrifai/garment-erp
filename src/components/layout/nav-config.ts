@@ -21,6 +21,7 @@ import {
   Shirt,
   ShoppingBag,
   ShoppingCart,
+  Sparkles,
   Truck,
   Users,
   UsersRound,
@@ -54,6 +55,11 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     label: "Utama",
     icon: LayoutDashboard,
     items: [{ title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ALL_ROLES }],
+  },
+  {
+    label: "Asisten AI",
+    icon: Sparkles,
+    items: [{ title: "Asisten AI", href: "/asisten-ai", icon: Sparkles, roles: ALL_ROLES }],
   },
   {
     label: "Penjualan",
@@ -238,6 +244,7 @@ export function visibleSections(roles: readonly RoleCode[]): NavSection[] {
 
 const PATH_LABELS: Record<string, string> = {
   "/dashboard": "Dashboard",
+  "/asisten-ai": "Asisten AI",
   "/buyers": "Buyer",
   "/sales": "Sales Order",
   "/master": "Master Data",

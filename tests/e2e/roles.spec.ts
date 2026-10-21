@@ -161,6 +161,7 @@ test.describe("otorisasi per role", () => {
       await expect(page.getByText(/Selamat datang/)).toBeVisible();
       const sidebar = sidebarOf(page);
       await expect(sidebar.getByRole("link", { name: "Dashboard", exact: true })).toBeVisible();
+      await expectSidebarLink(sidebar, "Asisten AI");
 
       for (const menu of roleCase.visible) {
         await expectSidebarLink(sidebar, menu);

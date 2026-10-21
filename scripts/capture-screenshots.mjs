@@ -60,6 +60,7 @@ async function main() {
     { file: "12-users.png", path: "/settings/users" },
     { file: "13-audit-log.png", path: "/settings/audit" },
     { file: "14-docs.png", path: "/docs" },
+    { file: "15-asisten-ai.png", path: "/asisten-ai" },
   ];
 
   for (const target of targets) {
