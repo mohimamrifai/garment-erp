@@ -59,6 +59,7 @@ async function main() {
     { file: "11-reports.png", path: "/reports" },
     { file: "12-users.png", path: "/settings/users" },
     { file: "13-audit-log.png", path: "/settings/audit" },
+    { file: "14-docs.png", path: "/docs" },
   ];
 
   for (const target of targets) {

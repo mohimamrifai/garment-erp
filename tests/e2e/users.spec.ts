@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { expectSidebarLink, sidebarOf } from "./helpers/sidebar";
 
 const ADMIN = { email: "admin@garment.local", password: "password123" };
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
@@ -73,10 +74,7 @@ test("admin membuat, menonaktifkan, dan mengaktifkan kembali pengguna", async ({
   row = page.getByRole("row").filter({ hasText: email });
   await row.getByRole("button", { name: `Aksi untuk ${name}` }).click();
   await page.getByRole("menuitem", { name: "Aktifkan Kembali", exact: true }).click();
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Aktifkan", exact: true })
-    .click();
+  await page.getByRole("dialog").getByRole("button", { name: "Aktifkan", exact: true }).click();
   await expect(page.getByText("Pengguna diaktifkan kembali.")).toBeVisible();
 
   const activeContext = await browser.newContext({ baseURL: BASE_URL });
@@ -84,7 +82,7 @@ test("admin membuat, menonaktifkan, dan mengaktifkan kembali pengguna", async ({
     const activePage = await activeContext.newPage();
     await login(activePage, email, "password123");
     await expect(activePage).toHaveURL(/\/dashboard/, { timeout: 60_000 });
-    await expect(activePage.getByRole("link", { name: "Sales Order", exact: true })).toBeVisible();
+    await expectSidebarLink(sidebarOf(activePage), "Sales Order");
     await expect(activePage.getByRole("link", { name: "Pengguna", exact: true })).toHaveCount(0);
   } finally {
     await activeContext.close();

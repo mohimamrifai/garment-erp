@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { expectSidebarLink, revealSidebarLink, sidebarOf } from "./helpers/sidebar";
 
 const ADMIN = { email: "admin@garment.local", password: "password123" };
 const QC = { email: "qc@garment.local", password: "password123" };
@@ -30,9 +31,20 @@ test.describe("autentikasi", () => {
   test("admin dapat masuk dan melihat seluruh menu", async ({ page }) => {
     await login(page, ADMIN);
     await expect(page.getByText(/Selamat datang/)).toBeVisible();
-    await expect(page.getByRole("link", { name: "Buyer", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Pengguna", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Laporan", exact: true })).toBeVisible();
+    const sidebar = sidebarOf(page);
+    await expectSidebarLink(sidebar, "Buyer");
+    await expectSidebarLink(sidebar, "Pengguna");
+    await expectSidebarLink(sidebar, "Laporan");
+    await expectSidebarLink(sidebar, "Dokumentasi");
+  });
+
+  test("admin membuka dokumentasi dari sidebar", async ({ page }) => {
+    await login(page, ADMIN);
+    const docs = await revealSidebarLink(sidebarOf(page), "Dokumentasi");
+    await docs.click();
+    await expect(page).toHaveURL(/\/docs$/);
+    await expect(page.getByRole("heading", { name: "Dokumentasi", exact: true })).toBeVisible();
+    await expect(page.getByText("Peran & akses", { exact: true })).toBeVisible();
   });
 
   test("keluar mengakhiri sesi dan mengembalikan ke halaman masuk", async ({ page }) => {
@@ -56,7 +68,7 @@ test.describe("autentikasi", () => {
     await demoButton.click();
     await expect(page).toHaveURL(/\/dashboard/);
     await expect(page.getByText(/Selamat datang/)).toBeVisible();
-    await expect(page.getByRole("link", { name: "Buyer", exact: true })).toBeVisible();
+    await expectSidebarLink(sidebarOf(page), "Buyer");
   });
 });
 
@@ -64,7 +76,7 @@ test.describe("otorisasi berbasis role", () => {
   test("staff QC tidak melihat menu admin dan ditolak di halaman pengguna", async ({ page }) => {
     await login(page, QC);
 
-    await expect(page.getByRole("link", { name: "Quality Control", exact: true })).toBeVisible();
+    await expectSidebarLink(sidebarOf(page), "Quality Control");
     await expect(page.getByRole("link", { name: "Pengguna", exact: true })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Buyer", exact: true })).toHaveCount(0);
 

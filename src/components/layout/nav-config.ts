@@ -1,8 +1,10 @@
 import {
   ArrowLeftRight,
   BarChart3,
+  BookOpen,
   Boxes,
   Building2,
+  CircleHelp,
   ClipboardCheck,
   Factory,
   FileText,
@@ -15,7 +17,9 @@ import {
   Route,
   Ruler,
   ScrollText,
+  Settings,
   Shirt,
+  ShoppingBag,
   ShoppingCart,
   Truck,
   Users,
@@ -35,6 +39,7 @@ export type NavItem = {
 
 export type NavSection = {
   label: string;
+  icon: LucideIcon;
   items: readonly NavItem[];
 };
 
@@ -47,10 +52,12 @@ const ALL_ROLES = ROLE_CODES;
 export const NAV_SECTIONS: readonly NavSection[] = [
   {
     label: "Utama",
+    icon: LayoutDashboard,
     items: [{ title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ALL_ROLES }],
   },
   {
     label: "Penjualan",
+    icon: ShoppingBag,
     items: [
       { title: "Buyer", href: "/buyers", icon: Handshake, roles: ["ADMIN", "MANAGER", "SALES"] },
       {
@@ -63,6 +70,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   },
   {
     label: "Organisasi",
+    icon: Building2,
     items: [
       {
         title: "Departemen",
@@ -86,6 +94,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   },
   {
     label: "Master Data",
+    icon: Boxes,
     items: [
       {
         title: "Produk",
@@ -127,6 +136,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   },
   {
     label: "Pembelian & Gudang",
+    icon: PackageCheck,
     items: [
       {
         title: "Pembelian",
@@ -156,6 +166,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   },
   {
     label: "Produksi",
+    icon: Factory,
     items: [
       {
         title: "Produksi",
@@ -173,6 +184,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   },
   {
     label: "Pengiriman & Laporan",
+    icon: Truck,
     items: [
       {
         title: "Barang Jadi",
@@ -196,9 +208,22 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   },
   {
     label: "Pengaturan",
+    icon: Settings,
     items: [
       { title: "Pengguna", href: "/settings/users", icon: Users, roles: ["ADMIN"] },
       { title: "Audit Log", href: "/settings/audit", icon: ScrollText, roles: ["ADMIN"] },
+    ],
+  },
+  {
+    label: "Bantuan",
+    icon: CircleHelp,
+    items: [
+      {
+        title: "Dokumentasi",
+        href: "/docs",
+        icon: BookOpen,
+        roles: ALL_ROLES,
+      },
     ],
   },
 ];
@@ -237,6 +262,7 @@ const PATH_LABELS: Record<string, string> = {
   "/settings": "Pengaturan",
   "/settings/users": "Pengguna",
   "/settings/audit": "Audit Log",
+  "/docs": "Dokumentasi",
   "/akses-ditolak": "Akses Ditolak",
 };
 

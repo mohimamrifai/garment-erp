@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { expectSidebarLink, sidebarOf } from "./helpers/sidebar";
 
 const PASSWORD = "password123";
 
@@ -70,7 +71,15 @@ const CASES: readonly RoleCase[] = [
       "Mutasi Stok",
       "Laporan",
     ],
-    hidden: ["Buyer", "Produksi", "Quality Control", "Barang Jadi", "Pengiriman", "Pengguna", "Audit Log"],
+    hidden: [
+      "Buyer",
+      "Produksi",
+      "Quality Control",
+      "Barang Jadi",
+      "Pengiriman",
+      "Pengguna",
+      "Audit Log",
+    ],
     home: { path: "/purchasing", heading: "Pembelian" },
     denied: "/qc/new",
   },
@@ -114,7 +123,15 @@ const CASES: readonly RoleCase[] = [
     role: "Staff QC",
     email: "qc@garment.local",
     visible: ["Produksi", "Quality Control", "Laporan"],
-    hidden: ["Buyer", "Sales Order", "Pembelian", "Barang Jadi", "Pengiriman", "Pengguna", "Audit Log"],
+    hidden: [
+      "Buyer",
+      "Sales Order",
+      "Pembelian",
+      "Barang Jadi",
+      "Pengiriman",
+      "Pengguna",
+      "Audit Log",
+    ],
     home: { path: "/qc", heading: "Quality Control" },
     denied: "/production/new",
   },
@@ -142,14 +159,11 @@ test.describe("otorisasi per role", () => {
     test(`${roleCase.role}: menu, akses halaman, dan penolakan`, async ({ page }) => {
       await login(page, roleCase.email);
       await expect(page.getByText(/Selamat datang/)).toBeVisible();
-      const sidebar = page.locator('[data-slot="sidebar"]');
+      const sidebar = sidebarOf(page);
       await expect(sidebar.getByRole("link", { name: "Dashboard", exact: true })).toBeVisible();
 
       for (const menu of roleCase.visible) {
-        await expect(
-          sidebar.getByRole("link", { name: menu, exact: true }),
-          `menu "${menu}" harus terlihat untuk ${roleCase.role}`,
-        ).toBeVisible();
+        await expectSidebarLink(sidebar, menu);
       }
       for (const menu of roleCase.hidden) {
         await expect(
@@ -161,7 +175,9 @@ test.describe("otorisasi per role", () => {
       // Halaman yang diizinkan harus terbuka, bukan dialihkan.
       await page.goto(roleCase.home.path);
       await expect(page).not.toHaveURL(/\/akses-ditolak/);
-      await expect(page.getByRole("heading", { name: roleCase.home.heading, exact: true })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: roleCase.home.heading, exact: true }),
+      ).toBeVisible();
 
       // Halaman yang tidak diizinkan harus dialihkan ke /akses-ditolak.
       if (roleCase.denied) {
