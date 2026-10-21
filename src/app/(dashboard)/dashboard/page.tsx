@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { FulfillmentSummarySection } from "./_components/fulfillment-section";
 import { InventorySummarySection } from "./_components/inventory-section";
-import { PipelineCard } from "./_components/pipeline-card";
 import { ProductionSummarySection } from "./_components/production-section";
 import { PurchasingSummarySection } from "./_components/purchasing-section";
 import { SalesSummarySection } from "./_components/sales-section";
@@ -46,8 +45,6 @@ export default function DashboardPage({ searchParams }: DashboardPageProps) {
       <Suspense fallback={<SectionSkeleton />}>
         <FulfillmentSummarySection searchParams={searchParams} />
       </Suspense>
-
-      <PipelineCard />
     </div>
   );
 }
