@@ -11,3 +11,5 @@ export * from "./inventory";
 export * from "./production";
 export * from "./finished-goods";
 export * from "./shipping";
+export * from "./hr";
+export * from "./accounting";

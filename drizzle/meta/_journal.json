@@ -43,6 +43,13 @@
       "when": 1792596288308,
       "tag": "0005_past_sebastian_shaw",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792807313760,
+      "tag": "0006_organic_serpent_society",
+      "breakpoints": true
     }
   ]
 }

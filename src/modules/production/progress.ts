@@ -14,6 +14,7 @@ import {
 import { isUniqueViolation } from "@/lib/utils/db-errors";
 import { nextDocumentNumber } from "@/lib/utils/documents";
 import { nullable } from "@/lib/utils/strings";
+import { postMaterialIssueToAccounting } from "@/modules/accounting/integration";
 import { postMovement } from "@/modules/inventory/engine";
 import type { MaterialIssueInput, StageRecordInput } from "./schemas";
 import {
@@ -310,6 +311,20 @@ export async function issueMaterials(
         movementNumbers.push(movement.transaction.number);
       }
 
+      const totalCost = await postMaterialIssueToAccounting(
+        tx,
+        issue,
+        order,
+        input.items,
+        actorUserId,
+      );
+
+      const [updatedIssue] = await tx
+        .select()
+        .from(materialIssues)
+        .where(eq(materialIssues.id, issue.id))
+        .limit(1);
+
       await recordAudit(tx, {
         actorUserId,
         action: "production.issue-material",
@@ -320,10 +335,11 @@ export async function issueMaterials(
           productionOrderNumber: order.number,
           itemCount: input.items.length,
           movementNumbers,
+          totalCost,
         },
       });
 
-      return issue;
+      return updatedIssue ?? issue;
     });
   } catch (error) {
     // Idempotensi race: permintaan berulang paralel → ambil dokumen yang menang.

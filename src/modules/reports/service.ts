@@ -3,9 +3,12 @@ import { alias } from "drizzle-orm/pg-core";
 import { ApiError } from "@/lib/api/errors";
 import { db } from "@/lib/db";
 import {
+  accounts,
   buyers,
   inventoryBalances,
   inventoryTransactions,
+  journalEntries,
+  journalLines,
   materialReceiptItems,
   materialReceipts,
   materials,
@@ -15,9 +18,12 @@ import {
   productionStages,
   productVariants,
   products,
+  payrollRuns,
+  purchaseBills,
   purchaseOrderItems,
   purchaseOrders,
   qcInspections,
+  salesInvoices,
   salesOrderItems,
   salesOrders,
   shipmentItems,
@@ -28,6 +34,7 @@ import {
   warehouses,
 } from "@/lib/db/schema";
 import { formatDateTimeId, getDateOffset, getTodayDate } from "@/lib/utils/dates";
+import { formatIdr } from "@/lib/utils/currency";
 import { INVENTORY_TRANSACTION_TYPE_LABELS } from "@/modules/inventory/status";
 import { PO_STATUS_LABELS } from "@/modules/purchasing/status";
 import {
@@ -36,6 +43,7 @@ import {
 } from "@/modules/production/status";
 import { SO_STATUS_LABELS } from "@/modules/sales-order/status";
 import { SHIPMENT_STATUS_LABELS } from "@/modules/shipping/status";
+import { ACCOUNT_TYPE_LABELS, CASH_FLOW_LABELS } from "@/modules/accounting/schemas";
 import type { RoleCode } from "@/lib/permissions";
 import { computeAttainmentPercentage, computeDefectRate } from "./calc";
 import { REPORT_PERIOD_DEFAULT_DAYS, type ReportSlug } from "./schemas";
@@ -181,6 +189,123 @@ export const REPORT_DEFINITIONS: readonly ReportDefinition[] = [
       { key: "location", label: "Lokasi Asal" },
       { key: "itemCount", label: "Item", align: "right", format: "number" },
       { key: "quantity", label: "Kuantitas", align: "right", format: "number" },
+    ],
+  },
+  {
+    slug: "trial-balance",
+    title: "Neraca Saldo",
+    description: "Saldo debit dan kredit seluruh akun pada periode berjalan.",
+    roles: ["ADMIN", "MANAGER", "FINANCE_STAFF"],
+    columns: [
+      { key: "code", label: "Kode" },
+      { key: "account", label: "Akun" },
+      { key: "type", label: "Tipe" },
+      { key: "debit", label: "Debit", align: "right", format: "number" },
+      { key: "credit", label: "Kredit", align: "right", format: "number" },
+      { key: "balance", label: "Saldo", align: "right", format: "number" },
+    ],
+  },
+  {
+    slug: "income-statement",
+    title: "Laba Rugi",
+    description: "Pendapatan dan beban pada periode, beserta laba bersih.",
+    roles: ["ADMIN", "MANAGER", "FINANCE_STAFF"],
+    columns: [
+      { key: "section", label: "Kelompok" },
+      { key: "code", label: "Kode" },
+      { key: "account", label: "Akun" },
+      { key: "amount", label: "Jumlah", align: "right", format: "number" },
+    ],
+  },
+  {
+    slug: "balance-sheet",
+    title: "Neraca",
+    description: "Posisi aset, kewajiban, dan ekuitas per tanggal akhir periode.",
+    roles: ["ADMIN", "MANAGER", "FINANCE_STAFF"],
+    columns: [
+      { key: "section", label: "Kelompok" },
+      { key: "code", label: "Kode" },
+      { key: "account", label: "Akun" },
+      { key: "amount", label: "Jumlah", align: "right", format: "number" },
+    ],
+  },
+  {
+    slug: "general-ledger",
+    title: "Buku Besar",
+    description: "Rincian baris jurnal per akun pada periode.",
+    roles: ["ADMIN", "MANAGER", "FINANCE_STAFF"],
+    columns: [
+      { key: "date", label: "Tanggal", format: "date" },
+      { key: "journal", label: "Nomor Jurnal" },
+      { key: "account", label: "Akun" },
+      { key: "description", label: "Keterangan" },
+      { key: "debit", label: "Debit", align: "right", format: "number" },
+      { key: "credit", label: "Kredit", align: "right", format: "number" },
+    ],
+  },
+  {
+    slug: "cash-flow",
+    title: "Arus Kas",
+    description: "Mutasi kas dan bank pada periode berdasarkan kategori arus kas.",
+    roles: ["ADMIN", "MANAGER", "FINANCE_STAFF"],
+    columns: [
+      { key: "date", label: "Tanggal", format: "date" },
+      { key: "journal", label: "Nomor Jurnal" },
+      { key: "description", label: "Keterangan" },
+      { key: "category", label: "Kategori" },
+      { key: "inflow", label: "Kas Masuk", align: "right", format: "number" },
+      { key: "outflow", label: "Kas Keluar", align: "right", format: "number" },
+      { key: "net", label: "Neto", align: "right", format: "number" },
+    ],
+  },
+  {
+    slug: "ar-aging",
+    title: "Umur Piutang",
+    description: "Faktur penjualan yang belum lunas beserta umur jatuh tempo.",
+    roles: ["ADMIN", "MANAGER", "FINANCE_STAFF"],
+    columns: [
+      { key: "invoice", label: "Faktur" },
+      { key: "buyer", label: "Buyer" },
+      { key: "invoiceDate", label: "Tanggal", format: "date" },
+      { key: "dueDate", label: "Jatuh Tempo", format: "date" },
+      { key: "total", label: "Total", align: "right", format: "number" },
+      { key: "paid", label: "Dibayar", align: "right", format: "number" },
+      { key: "outstanding", label: "Sisa", align: "right", format: "number" },
+      { key: "ageDays", label: "Umur (hari)", align: "right", format: "number" },
+      { key: "bucket", label: "Kategori" },
+    ],
+  },
+  {
+    slug: "ap-aging",
+    title: "Umur Utang",
+    description: "Tagihan pembelian yang belum lunas beserta umur jatuh tempo.",
+    roles: ["ADMIN", "MANAGER", "FINANCE_STAFF"],
+    columns: [
+      { key: "bill", label: "Tagihan" },
+      { key: "supplier", label: "Supplier" },
+      { key: "billDate", label: "Tanggal", format: "date" },
+      { key: "dueDate", label: "Jatuh Tempo", format: "date" },
+      { key: "total", label: "Total", align: "right", format: "number" },
+      { key: "paid", label: "Dibayar", align: "right", format: "number" },
+      { key: "outstanding", label: "Sisa", align: "right", format: "number" },
+      { key: "ageDays", label: "Umur (hari)", align: "right", format: "number" },
+      { key: "bucket", label: "Kategori" },
+    ],
+  },
+  {
+    slug: "payroll-summary",
+    title: "Rekap Payroll",
+    description: "Ringkasan payroll per periode beserta komponen gaji dan kontribusi perusahaan.",
+    roles: ["ADMIN", "MANAGER", "HR_STAFF", "PAYROLL_ADMIN", "FINANCE_STAFF"],
+    columns: [
+      { key: "number", label: "Nomor Payroll" },
+      { key: "period", label: "Periode" },
+      { key: "status", label: "Status" },
+      { key: "employees", label: "Karyawan", align: "right", format: "number" },
+      { key: "gross", label: "Bruto", align: "right", format: "number" },
+      { key: "deductions", label: "Potongan", align: "right", format: "number" },
+      { key: "net", label: "Neto", align: "right", format: "number" },
+      { key: "employer", label: "Kontribusi Perusahaan", align: "right", format: "number" },
     ],
   },
 ];
@@ -699,6 +824,483 @@ async function finishedGoodsShipmentRows(
 }
 
 /* ------------------------------------------------------------------ */
+/* Laporan keuangan                                                    */
+/* ------------------------------------------------------------------ */
+
+const FINANCE_STATUSES = ["POSTED", "REVERSED"] as const;
+
+const PAYROLL_STATUS_LABELS: Record<string, string> = {
+  DRAFT: "Draf",
+  APPROVED: "Disetujui",
+  PAID: "Dibayar",
+  CANCELLED: "Dibatalkan",
+};
+
+function daysBetween(from: string, to: string): number {
+  const start = Date.UTC(
+    Number(from.slice(0, 4)),
+    Number(from.slice(5, 7)) - 1,
+    Number(from.slice(8, 10)),
+  );
+  const end = Date.UTC(
+    Number(to.slice(0, 4)),
+    Number(to.slice(5, 7)) - 1,
+    Number(to.slice(8, 10)),
+  );
+  return Math.round((end - start) / 86_400_000);
+}
+
+function agingBucket(dueDate: string, asOf: string): { ageDays: number; bucket: string } {
+  const ageDays = daysBetween(dueDate, asOf);
+  if (ageDays <= 0) return { ageDays, bucket: "Belum jatuh tempo" };
+  if (ageDays <= 30) return { ageDays, bucket: "1–30 hari" };
+  if (ageDays <= 60) return { ageDays, bucket: "31–60 hari" };
+  return { ageDays, bucket: "> 60 hari" };
+}
+
+async function trialBalanceRows(period: ReportPeriod): Promise<{
+  rows: ReportRow[];
+  summary: ReportSummaryItem[];
+}> {
+  const rows = await db
+    .select({
+      code: accounts.code,
+      account: accounts.name,
+      type: accounts.type,
+      debit: sql<string>`coalesce(sum(case when ${journalEntries.status} in ('POSTED', 'REVERSED') and ${journalEntries.journalDate} >= ${period.from} and ${journalEntries.journalDate} <= ${period.to} then ${journalLines.debit} else 0 end), 0)`,
+      credit: sql<string>`coalesce(sum(case when ${journalEntries.status} in ('POSTED', 'REVERSED') and ${journalEntries.journalDate} >= ${period.from} and ${journalEntries.journalDate} <= ${period.to} then ${journalLines.credit} else 0 end), 0)`,
+    })
+    .from(accounts)
+    .leftJoin(journalLines, eq(journalLines.accountId, accounts.id))
+    .leftJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))
+    .where(eq(accounts.isActive, true))
+    .groupBy(accounts.id)
+    .orderBy(asc(accounts.code));
+
+  let totalDebit = 0;
+  let totalCredit = 0;
+  const reportRows = rows
+    .map((row) => {
+      const debit = Number(row.debit);
+      const credit = Number(row.credit);
+      totalDebit += debit;
+      totalCredit += credit;
+      return {
+        code: row.code,
+        account: row.account,
+        type: ACCOUNT_TYPE_LABELS[row.type],
+        debit,
+        credit,
+        balance: debit - credit,
+      };
+    })
+    .filter((row) => row.debit !== 0 || row.credit !== 0);
+
+  return {
+    rows: reportRows,
+    summary: [
+      { label: "Total debit", value: formatIdr(totalDebit) },
+      { label: "Total kredit", value: formatIdr(totalCredit) },
+      {
+        label: "Selisih",
+        value: formatIdr(totalDebit - totalCredit),
+      },
+    ],
+  };
+}
+
+async function incomeStatementRows(period: ReportPeriod): Promise<{
+  rows: ReportRow[];
+  summary: ReportSummaryItem[];
+}> {
+  const rows = await db
+    .select({
+      code: accounts.code,
+      account: accounts.name,
+      type: accounts.type,
+      debit: sql<string>`coalesce(sum(${journalLines.debit}), 0)`,
+      credit: sql<string>`coalesce(sum(${journalLines.credit}), 0)`,
+    })
+    .from(journalLines)
+    .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+    .innerJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))
+    .where(
+      and(
+        inArray(journalEntries.status, [...FINANCE_STATUSES]),
+        gte(journalEntries.journalDate, period.from),
+        lte(journalEntries.journalDate, period.to),
+        inArray(accounts.type, ["REVENUE", "EXPENSE"]),
+      ),
+    )
+    .groupBy(accounts.id)
+    .orderBy(asc(accounts.code));
+
+  let revenue = 0;
+  let expense = 0;
+  const reportRows: ReportRow[] = [];
+  for (const row of rows) {
+    const amount =
+      row.type === "REVENUE"
+        ? Number(row.credit) - Number(row.debit)
+        : Number(row.debit) - Number(row.credit);
+    if (amount === 0) continue;
+    if (row.type === "REVENUE") revenue += amount;
+    else expense += amount;
+    reportRows.push({
+      section: row.type === "REVENUE" ? "Pendapatan" : "Beban",
+      code: row.code,
+      account: row.account,
+      amount,
+    });
+  }
+
+  return {
+    rows: reportRows,
+    summary: [
+      { label: "Total pendapatan", value: formatIdr(revenue) },
+      { label: "Total beban", value: formatIdr(expense) },
+      { label: "Laba bersih", value: formatIdr(revenue - expense) },
+    ],
+  };
+}
+
+async function balanceSheetRows(period: ReportPeriod): Promise<{
+  rows: ReportRow[];
+  summary: ReportSummaryItem[];
+}> {
+  const rows = await db
+    .select({
+      code: accounts.code,
+      account: accounts.name,
+      type: accounts.type,
+      debit: sql<string>`coalesce(sum(${journalLines.debit}), 0)`,
+      credit: sql<string>`coalesce(sum(${journalLines.credit}), 0)`,
+    })
+    .from(journalLines)
+    .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+    .innerJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))
+    .where(
+      and(
+        inArray(journalEntries.status, [...FINANCE_STATUSES]),
+        lte(journalEntries.journalDate, period.to),
+        inArray(accounts.type, ["ASSET", "LIABILITY", "EQUITY"]),
+      ),
+    )
+    .groupBy(accounts.id)
+    .orderBy(asc(accounts.code));
+
+  let assets = 0;
+  let liabilities = 0;
+  let equity = 0;
+  const reportRows: ReportRow[] = [];
+  for (const row of rows) {
+    const amount =
+      row.type === "ASSET"
+        ? Number(row.debit) - Number(row.credit)
+        : Number(row.credit) - Number(row.debit);
+    if (amount === 0) continue;
+    if (row.type === "ASSET") assets += amount;
+    else if (row.type === "LIABILITY") liabilities += amount;
+    else equity += amount;
+    reportRows.push({
+      section:
+        row.type === "ASSET" ? "Aset" : row.type === "LIABILITY" ? "Kewajiban" : "Ekuitas",
+      code: row.code,
+      account: row.account,
+      amount,
+    });
+  }
+
+  const [profit] = await db
+    .select({
+      value: sql<string>`coalesce(sum(case when ${accounts.type} = 'REVENUE' then ${journalLines.credit} - ${journalLines.debit} when ${accounts.type} = 'EXPENSE' then ${journalLines.debit} - ${journalLines.credit} else 0 end), 0)`,
+    })
+    .from(journalLines)
+    .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+    .innerJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))
+    .where(
+      and(
+        inArray(journalEntries.status, [...FINANCE_STATUSES]),
+        lte(journalEntries.journalDate, period.to),
+      ),
+    );
+  const netIncome = Number(profit?.value ?? 0);
+  if (netIncome !== 0) {
+    equity += netIncome;
+    reportRows.push({
+      section: "Ekuitas",
+      code: "—",
+      account: "Laba periode berjalan",
+      amount: netIncome,
+    });
+  }
+
+  return {
+    rows: reportRows,
+    summary: [
+      { label: "Total aset", value: formatIdr(assets) },
+      { label: "Total kewajiban", value: formatIdr(liabilities) },
+      { label: "Total ekuitas", value: formatIdr(equity) },
+    ],
+  };
+}
+
+async function generalLedgerRows(period: ReportPeriod): Promise<ReportRow[]> {
+  const rows = await db
+    .select({
+      date: journalEntries.journalDate,
+      journal: journalEntries.number,
+      account: sql<string>`${accounts.code} || ' — ' || ${accounts.name}`,
+      description: journalLines.description,
+      debit: journalLines.debit,
+      credit: journalLines.credit,
+    })
+    .from(journalLines)
+    .innerJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))
+    .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+    .where(
+      and(
+        inArray(journalEntries.status, [...FINANCE_STATUSES]),
+        gte(journalEntries.journalDate, period.from),
+        lte(journalEntries.journalDate, period.to),
+      ),
+    )
+    .orderBy(asc(journalEntries.journalDate), asc(journalEntries.number), asc(accounts.code));
+
+  return rows.map((row) => ({
+    ...row,
+    debit: Number(row.debit),
+    credit: Number(row.credit),
+  }));
+}
+
+async function cashFlowRows(period: ReportPeriod): Promise<{
+  rows: ReportRow[];
+  summary: ReportSummaryItem[];
+}> {
+  const rows = await db
+    .select({
+      date: journalEntries.journalDate,
+      journal: journalEntries.number,
+      description: journalEntries.description,
+      category: journalEntries.cashFlowCategory,
+      debit: journalLines.debit,
+      credit: journalLines.credit,
+    })
+    .from(journalLines)
+    .innerJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))
+    .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+    .where(
+      and(
+        eq(accounts.isCashBank, true),
+        inArray(journalEntries.status, [...FINANCE_STATUSES]),
+        gte(journalEntries.journalDate, period.from),
+        lte(journalEntries.journalDate, period.to),
+      ),
+    )
+    .orderBy(asc(journalEntries.journalDate), asc(journalEntries.number));
+
+  let inflow = 0;
+  let outflow = 0;
+  const reportRows = rows.map((row) => {
+    const cashIn = Number(row.debit);
+    const cashOut = Number(row.credit);
+    inflow += cashIn;
+    outflow += cashOut;
+    return {
+      date: row.date,
+      journal: row.journal,
+      description: row.description,
+      category: CASH_FLOW_LABELS[row.category],
+      inflow: cashIn,
+      outflow: cashOut,
+      net: cashIn - cashOut,
+    };
+  });
+
+  return {
+    rows: reportRows,
+    summary: [
+      { label: "Kas masuk", value: formatIdr(inflow) },
+      { label: "Kas keluar", value: formatIdr(outflow) },
+      { label: "Arus kas neto", value: formatIdr(inflow - outflow) },
+    ],
+  };
+}
+
+async function receivableAgingRows(period: ReportPeriod): Promise<{
+  rows: ReportRow[];
+  summary: ReportSummaryItem[];
+}> {
+  const rows = await db
+    .select({
+      invoice: salesInvoices.number,
+      buyer: buyers.name,
+      invoiceDate: salesInvoices.invoiceDate,
+      dueDate: salesInvoices.dueDate,
+      total: salesInvoices.total,
+      paid: salesInvoices.amountPaid,
+      outstanding: sql<string>`(${salesInvoices.total} - ${salesInvoices.amountPaid})`,
+    })
+    .from(salesInvoices)
+    .innerJoin(buyers, eq(salesInvoices.buyerId, buyers.id))
+    .where(
+      and(
+        ne(salesInvoices.status, "PAID"),
+        ne(salesInvoices.status, "CANCELLED"),
+        lte(salesInvoices.invoiceDate, period.to),
+      ),
+    )
+    .orderBy(asc(salesInvoices.dueDate), asc(salesInvoices.number));
+
+  let outstandingTotal = 0;
+  const reportRows = rows.map((row) => {
+    const outstanding = Number(row.outstanding);
+    outstandingTotal += outstanding;
+    const { ageDays, bucket } = agingBucket(row.dueDate, period.to);
+    return {
+      invoice: row.invoice,
+      buyer: row.buyer,
+      invoiceDate: row.invoiceDate,
+      dueDate: row.dueDate,
+      total: Number(row.total),
+      paid: Number(row.paid),
+      outstanding,
+      ageDays,
+      bucket,
+    };
+  });
+
+  return {
+    rows: reportRows,
+    summary: [
+      { label: "Total piutang", value: formatIdr(outstandingTotal) },
+      {
+        label: "Faktur belum lunas",
+        value: `${reportRows.length.toLocaleString("id-ID")} faktur`,
+      },
+      {
+        label: "Lewat jatuh tempo",
+        value: `${reportRows.filter((row) => Number(row.ageDays) > 0).length.toLocaleString("id-ID")} faktur`,
+      },
+    ],
+  };
+}
+
+async function payableAgingRows(period: ReportPeriod): Promise<{
+  rows: ReportRow[];
+  summary: ReportSummaryItem[];
+}> {
+  const rows = await db
+    .select({
+      bill: purchaseBills.number,
+      supplier: suppliers.name,
+      billDate: purchaseBills.billDate,
+      dueDate: purchaseBills.dueDate,
+      total: purchaseBills.total,
+      paid: purchaseBills.amountPaid,
+      outstanding: sql<string>`(${purchaseBills.total} - ${purchaseBills.amountPaid})`,
+    })
+    .from(purchaseBills)
+    .innerJoin(suppliers, eq(purchaseBills.supplierId, suppliers.id))
+    .where(
+      and(
+        ne(purchaseBills.status, "PAID"),
+        ne(purchaseBills.status, "CANCELLED"),
+        lte(purchaseBills.billDate, period.to),
+      ),
+    )
+    .orderBy(asc(purchaseBills.dueDate), asc(purchaseBills.number));
+
+  let outstandingTotal = 0;
+  const reportRows = rows.map((row) => {
+    const outstanding = Number(row.outstanding);
+    outstandingTotal += outstanding;
+    const { ageDays, bucket } = agingBucket(row.dueDate, period.to);
+    return {
+      bill: row.bill,
+      supplier: row.supplier,
+      billDate: row.billDate,
+      dueDate: row.dueDate,
+      total: Number(row.total),
+      paid: Number(row.paid),
+      outstanding,
+      ageDays,
+      bucket,
+    };
+  });
+
+  return {
+    rows: reportRows,
+    summary: [
+      { label: "Total utang", value: formatIdr(outstandingTotal) },
+      {
+        label: "Tagihan belum lunas",
+        value: `${reportRows.length.toLocaleString("id-ID")} tagihan`,
+      },
+      {
+        label: "Lewat jatuh tempo",
+        value: `${reportRows.filter((row) => Number(row.ageDays) > 0).length.toLocaleString("id-ID")} tagihan`,
+      },
+    ],
+  };
+}
+
+async function payrollSummaryRows(period: ReportPeriod): Promise<{
+  rows: ReportRow[];
+  summary: ReportSummaryItem[];
+}> {
+  const rows = await db
+    .select({
+      number: payrollRuns.number,
+      period: payrollRuns.period,
+      status: payrollRuns.status,
+      employees: sql<number>`(select count(*)::int from payslips p where p.payroll_run_id = payroll_runs.id)`,
+      gross: payrollRuns.totalGross,
+      deductions: payrollRuns.totalDeductions,
+      net: payrollRuns.totalNet,
+      employer: payrollRuns.totalEmployerContributions,
+    })
+    .from(payrollRuns)
+    .where(
+      and(
+        gte(payrollRuns.period, period.from.slice(0, 7)),
+        lte(payrollRuns.period, period.to.slice(0, 7)),
+        ne(payrollRuns.status, "CANCELLED"),
+      ),
+    )
+    .orderBy(asc(payrollRuns.period), asc(payrollRuns.number));
+
+  let gross = 0;
+  let net = 0;
+  let employer = 0;
+  const reportRows = rows.map((row) => {
+    gross += Number(row.gross);
+    net += Number(row.net);
+    employer += Number(row.employer);
+    return {
+      number: row.number,
+      period: row.period,
+      status: PAYROLL_STATUS_LABELS[row.status] ?? row.status,
+      employees: Number(row.employees),
+      gross: Number(row.gross),
+      deductions: Number(row.deductions),
+      net: Number(row.net),
+      employer: Number(row.employer),
+    };
+  });
+
+  return {
+    rows: reportRows,
+    summary: [
+      { label: "Total bruto", value: formatIdr(gross) },
+      { label: "Total neto", value: formatIdr(net) },
+      { label: "Kontribusi perusahaan", value: formatIdr(employer) },
+    ],
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* Builder                                                             */
 /* ------------------------------------------------------------------ */
 
@@ -750,6 +1352,51 @@ export async function buildReport(
     }
     case "fg-shipments": {
       const result = await finishedGoodsShipmentRows(period);
+      rows = result.rows;
+      summary = result.summary;
+      break;
+    }
+    case "trial-balance": {
+      const result = await trialBalanceRows(period);
+      rows = result.rows;
+      summary = result.summary;
+      break;
+    }
+    case "income-statement": {
+      const result = await incomeStatementRows(period);
+      rows = result.rows;
+      summary = result.summary;
+      break;
+    }
+    case "balance-sheet": {
+      const result = await balanceSheetRows(period);
+      rows = result.rows;
+      summary = result.summary;
+      break;
+    }
+    case "general-ledger":
+      rows = await generalLedgerRows(period);
+      break;
+    case "cash-flow": {
+      const result = await cashFlowRows(period);
+      rows = result.rows;
+      summary = result.summary;
+      break;
+    }
+    case "ar-aging": {
+      const result = await receivableAgingRows(period);
+      rows = result.rows;
+      summary = result.summary;
+      break;
+    }
+    case "ap-aging": {
+      const result = await payableAgingRows(period);
+      rows = result.rows;
+      summary = result.summary;
+      break;
+    }
+    case "payroll-summary": {
+      const result = await payrollSummaryRows(period);
       rows = result.rows;
       summary = result.summary;
       break;

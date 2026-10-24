@@ -10,6 +10,14 @@ export const REPORT_SLUGS = [
   "production-attainment",
   "qc-defects",
   "fg-shipments",
+  "trial-balance",
+  "income-statement",
+  "balance-sheet",
+  "general-ledger",
+  "cash-flow",
+  "ar-aging",
+  "ap-aging",
+  "payroll-summary",
 ] as const;
 
 export type ReportSlug = (typeof REPORT_SLUGS)[number];

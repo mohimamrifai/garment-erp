@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { Factory, PackageCheck, ShoppingCart, Truck, type LucideIcon } from "lucide-react";
+import {
+  Factory,
+  Landmark,
+  PackageCheck,
+  ShoppingCart,
+  Truck,
+  UsersRound,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +58,27 @@ const MODULES: readonly ModuleGuide[] = [
     icon: Truck,
     permission: "shipment.view",
   },
+  {
+    title: "HRIS",
+    description: "Data karyawan, absensi, cuti, dan kesiapan payroll.",
+    href: "/hr/attendance",
+    icon: UsersRound,
+    permission: "hr.attendance.view",
+  },
+  {
+    title: "Payroll",
+    description: "Hitung gaji, BPJS, PPh 21, slip gaji, dan pembayaran.",
+    href: "/payroll",
+    icon: Wallet,
+    permission: "payroll.view",
+  },
+  {
+    title: "Akuntansi",
+    description: "Jurnal, kas/bank, tutup buku, dan laporan keuangan.",
+    href: "/accounting",
+    icon: Landmark,
+    permission: "accounting.view",
+  },
 ];
 
 const NOTES = [
@@ -56,6 +86,8 @@ const NOTES = [
   "Dokumen yang sudah diposting tidak diedit ulang. Koreksi dilakukan lewat pembatalan atau dokumen baru sesuai alur.",
   "Audit Log menyimpan aktor, aksi, entitas, dan perubahan penting. Hanya Administrator yang dapat membukanya.",
   "Gunakan filter status, periode, dan pencarian untuk mempersempit daftar dokumen.",
+  "Payroll yang sudah disetujui tidak dapat diubah. Koreksi setelah posting dilakukan lewat jurnal pembalik, bukan menghapus jurnal.",
+  "Tutup buku hanya setelah semua jurnal periode diposting dan laporan keuangan diperiksa.",
 ] as const;
 
 function DocsSkeleton() {

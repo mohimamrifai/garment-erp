@@ -27,6 +27,7 @@ async function main() {
   const salesOrderId = await findId(api, "/api/v1/sales-orders?query=SO-202610-0003");
   const productionOrderId = await findId(api, "/api/v1/production-orders?query=SPK-202610-0001");
   const shipmentId = await findId(api, "/api/v1/shipments?query=SJ-202610-0001");
+  const payrollRunId = await findId(api, "/api/v1/payroll/runs?status=PAID");
 
   const browser = await chromium.launch();
 
@@ -61,6 +62,11 @@ async function main() {
     { file: "13-audit-log.png", path: "/settings/audit" },
     { file: "14-docs.png", path: "/docs" },
     { file: "15-asisten-ai.png", path: "/asisten-ai" },
+    { file: "16-hr-attendance.png", path: "/hr/attendance" },
+    { file: "17-payroll.png", path: "/payroll" },
+    { file: "18-payroll-detail.png", path: `/payroll/${payrollRunId}` },
+    { file: "19-accounting.png", path: "/accounting" },
+    { file: "20-financial-reports.png", path: "/accounting/reports" },
   ];
 
   for (const target of targets) {

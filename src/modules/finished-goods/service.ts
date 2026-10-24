@@ -17,6 +17,7 @@ import {
   type FinishedGoodsLot,
 } from "@/lib/db/schema";
 import { nullable } from "@/lib/utils/strings";
+import { postFinishedGoodsToAccounting } from "@/modules/accounting/integration";
 import { postMovement } from "@/modules/inventory/engine";
 import type { ListFinishedGoodsQuery } from "./schemas";
 
@@ -139,6 +140,14 @@ export async function recordFinishedGoodsLot(
     postedBy: input.createdBy,
   });
 
+  await postFinishedGoodsToAccounting(tx, inserted, input.createdBy);
+
+  const [costedLot] = await tx
+    .select()
+    .from(finishedGoods)
+    .where(eq(finishedGoods.id, inserted.id))
+    .limit(1);
+
   await recordAudit(tx, {
     actorUserId: input.createdBy,
     action: "finished-goods.receive",
@@ -153,7 +162,7 @@ export async function recordFinishedGoodsLot(
     },
   });
 
-  return { lot: inserted, created: true };
+  return { lot: costedLot ?? inserted, created: true };
 }
 
 /* ------------------------------------------------------------------ */

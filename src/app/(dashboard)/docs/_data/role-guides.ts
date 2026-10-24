@@ -21,7 +21,7 @@ export const ROLE_GUIDES: readonly RoleGuide[] = [
   {
     code: "ADMIN",
     focus: "Menjaga master data, akun pengguna, dan kelancaran seluruh alur operasional.",
-    menus: ["Dashboard", "Master Data", "Pengguna", "Audit Log", "Laporan"],
+    menus: ["Dashboard", "Master Data", "HRIS", "Payroll", "Akuntansi", "Pengguna", "Audit Log", "Laporan"],
     steps: [
       {
         title: "Siapkan master data",
@@ -44,6 +44,11 @@ export const ROLE_GUIDES: readonly RoleGuide[] = [
           "Posting penerimaan, output produksi, inspeksi QC, atau surat jalan bila operator membutuhkan eskalasi.",
       },
       {
+        title: "Pantau back-office",
+        detail:
+          "Periksa absensi/cuti, payroll, jurnal, kas/bank, dan laporan keuangan. Pastikan periode ditutup hanya setelah semua jurnal diposting.",
+      },
+      {
         title: "Tinjau Audit Log",
         detail:
           "Periksa aktor, aksi, entitas, dan detail perubahan untuk investigasi atau kontrol internal.",
@@ -61,7 +66,11 @@ export const ROLE_GUIDES: readonly RoleGuide[] = [
       "Produksi",
       "Quality Control",
       "Pengiriman",
+      "HRIS",
+      "Payroll",
+      "Akuntansi",
       "Laporan",
+      "Laporan Keuangan",
     ],
     steps: [
       {
@@ -85,12 +94,17 @@ export const ROLE_GUIDES: readonly RoleGuide[] = [
           "Manager dapat mengonfirmasi pesanan, memesan PO, memposting penerimaan, mencatat produksi, dan memposting pengiriman bila diperlukan.",
       },
       {
+        title: "Tinjau payroll dan keuangan",
+        detail:
+          "Buka Payroll untuk menyetujui payroll, dan Akuntansi untuk memeriksa jurnal, kas/bank, serta laporan keuangan sebelum tutup buku.",
+      },
+      {
         title: "Eskalasi akses khusus",
         detail:
           "Pengelolaan pengguna dan Audit Log hanya tersedia untuk Administrator; minta bantuan Administrator untuk perubahan akun.",
       },
     ],
-    note: "Manager dapat menjalankan sebagian besar operasi, tetapi tidak dapat mengelola pengguna atau membuka Audit Log.",
+    note: "Manager dapat menjalankan sebagian besar operasi dan menyetujui payroll, tetapi tidak dapat mengelola pengguna, membuka Audit Log, atau menutup buku.",
   },
   {
     code: "SALES",
@@ -335,5 +349,99 @@ export const ROLE_GUIDES: readonly RoleGuide[] = [
       },
     ],
     note: "Draf pengiriman masih dapat dibatalkan. Setelah diposting, stok sudah keluar dan surat jalan tidak dapat dibatalkan.",
+  },
+  {
+    code: "HR_STAFF",
+    focus: "Mengelola data kepegawaian, absensi, dan cuti agar payroll akurat.",
+    menus: ["Dashboard", "Karyawan", "Departemen", "Absensi", "Cuti", "Payroll", "Laporan"],
+    steps: [
+      {
+        title: "Lengkapi data karyawan",
+        detail:
+          "Buka Karyawan → Tambah Karyawan. Isi departemen, jabatan, tanggal masuk, gaji pokok, tunjangan, status pajak, dan data bank.",
+      },
+      {
+        title: "Catat absensi",
+        detail:
+          "Buka Absensi, pilih bulan, lalu catat kehadiran, keterlambatan, dan jam lembur. Absensi yang sama tidak boleh dicatat dua kali.",
+      },
+      {
+        title: "Kelola cuti",
+        detail:
+          "Buka Cuti → Ajukan Cuti. Setujui atau tolak pengajuan; cuti tidak dibayar akan mengurangi gaji pada payroll.",
+      },
+      {
+        title: "Periksa kesiapan payroll",
+        detail:
+          "Pastikan absensi dan cuti periode berjalan sudah lengkap sebelum Admin Payroll membuat payroll.",
+      },
+    ],
+    note: "Staff HR tidak membuat atau membayar payroll. Perubahan data gaji karyawan sebaiknya dikoordinasikan dengan Admin Payroll.",
+  },
+  {
+    code: "PAYROLL_ADMIN",
+    focus: "Menghitung, menyetujui, dan membayar payroll bulanan secara akurat.",
+    menus: ["Dashboard", "Karyawan", "Absensi", "Cuti", "Payroll", "Kas & Bank", "Laporan"],
+    steps: [
+      {
+        title: "Pastikan data periode",
+        detail:
+          "Periksa absensi, lembur, cuti disetujui, dan data gaji karyawan aktif sebelum membuat payroll.",
+      },
+      {
+        title: "Buat payroll",
+        detail:
+          "Buka Payroll → Buat Payroll, pilih periode bulanan, lalu periksa slip gaji, BPJS, PPh 21, dan total neto.",
+      },
+      {
+        title: "Setujui payroll",
+        detail:
+          "Setelah data benar, pilih Setujui. Jurnal beban gaji dan kewajiban pajak/BPJS diposting otomatis ke akuntansi.",
+      },
+      {
+        title: "Bayar payroll",
+        detail:
+          "Pada payroll berstatus Disetujui, pilih Bayar, tentukan akun kas/bank dan tanggal pembayaran.",
+      },
+      {
+        title: "Rekonsiliasi",
+        detail:
+          "Cocokkan total neto payroll dengan mutasi kas/bank dan periksa jurnal payroll di Akuntansi.",
+      },
+    ],
+    note: "Payroll yang sudah disetujui tidak dapat diubah. Koreksi dilakukan lewat pembatalan draf sebelum disetujui atau jurnal pembalik setelah posting.",
+  },
+  {
+    code: "FINANCE_STAFF",
+    focus: "Menjaga pembukuan, kas & bank, serta laporan keuangan sesuai SAK EMKM.",
+    menus: ["Dashboard", "Akuntansi", "Bagan Akun", "Jurnal", "Kas & Bank", "Tutup Buku", "Laporan Keuangan", "Payroll"],
+    steps: [
+      {
+        title: "Periksa bagan akun",
+        detail:
+          "Buka Akuntansi → Bagan Akun. Pastikan akun, saldo normal, dan akun kas/bank sudah sesuai kebutuhan perusahaan.",
+      },
+      {
+        title: "Catat kas & bank",
+        detail:
+          "Buka Kas & Bank → Catat Kas/Bank. Pilih penerimaan atau pembayaran, dokumen referensi, akun kas/bank, dan jumlah.",
+      },
+      {
+        title: "Tinjau jurnal",
+        detail:
+          "Buka Jurnal untuk memeriksa jurnal otomatis dari penjualan, pembelian, produksi, dan payroll. Posting jurnal manual yang masih draf.",
+      },
+      {
+        title: "Buat laporan",
+        detail:
+          "Buka Laporan Keuangan untuk melihat neraca saldo, laba rugi, neraca, buku besar, arus kas, dan umur piutang/utang.",
+      },
+      {
+        title: "Tutup buku",
+        detail:
+          "Setelah semua jurnal periode diposting dan direkonsiliasi, buka Tutup Buku dan tutup periode bulanan.",
+      },
+    ],
+    note: "Jurnal yang sudah diposting tidak dapat diubah; gunakan jurnal pembalik untuk koreksi. Tutup buku hanya setelah laporan periode diperiksa.",
   },
 ];

@@ -1,8 +1,8 @@
-# Plan Pengerjaan Bertahap — Garment ERP (MVP)
+# Plan Pengerjaan Bertahap — Garment ERP
 
-**Sumber:** `PRD.md` v1.0.0 (Approved for Implementation)
-**Disusun:** 18 Oktober 2026
-**Status:** Menunggu review
+**Sumber:** `PRD.md` v1.1.0 (Approved for Implementation)
+**Disusun:** 18 Oktober 2026 · **Diperbarui:** 24 Oktober 2026
+**Status:** Selesai — termasuk HRIS, Payroll & Akuntansi
 **Strategi:** Opsi 1 — urutan fase PRD + pola referensi (vertical slice) di Fase 1 + checkpoint demo di setiap fase
 
 ---
@@ -82,7 +82,8 @@ Catatan: gunakan alat di atas saat relevan; tidak wajib semuanya.
 | F4 Production & QC | 6–8 |
 | F5 Finished Goods, Shipment & Reporting | 4–6 |
 | F6 Release Readiness | 3–5 |
-| **Total** | **28–39 hari kerja (±6 minggu kalender, rentang wajar 5–8 minggu)** |
+| F7 HRIS, Payroll & Accounting | 8–12 |
+| **Total** | **36–51 hari kerja (±8 minggu kalender, rentang wajar 7–10 minggu)** |
 
 Estimasi PRD (4–6 minggu) tetap relevan bila item bertanda *(opsional)* dilewati dan pengerjaan mendekati penuh waktu. Waktu sebenarnya bergantung pada kedalaman pengujian (PRD §10).
 
@@ -267,7 +268,56 @@ Estimasi PRD (4–6 minggu) tetap relevan bila item bertanda *(opsional)* dilewa
 
 ---
 
-## 11. Risiko & mitigasi
+## 11. FASE 7 — HRIS, Payroll & Accounting (penambahan final)
+
+**Tujuan:** menutup kebutuhan back-office sebagai modul final: kepegawaian, payroll bulanan,
+akuntansi double-entry, dan laporan keuangan SAK EMKM sederhana.
+
+### Tasks
+
+- [x] 7.1 Schema HRIS & payroll: perluasan `employees` (gaji, pajak, BPJS, bank, kontrak),
+  `attendance_records`, `leave_types`, `leave_requests`, `payroll_runs`, `payslips`.
+  Migrasi `drizzle/0006_organic_serpent_society.sql`.
+- [x] 7.2 Schema akuntansi: `accounts`, `account_mappings`, `accounting_settings`,
+  `fiscal_periods`, `journal_entries`, `journal_lines`, `sales_invoices`, `purchase_bills`,
+  `payments`, `inventory_costs`.
+- [x] 7.3 Service HR: absensi unik per karyawan/tanggal, cuti dengan validasi tumpang tindih,
+  kuota, dan status; seed jenis cuti default lewat `ensureLeaveTypes`.
+- [x] 7.4 Kalkulator payroll: gaji pokok, tunjangan, lembur (divisor 173), potongan
+  ketidakhadiran/cuti tidak dibayar, BPJS Kesehatan/JHT/JP/JKK/JKM, PTKP, dan PPh 21 progresif.
+- [x] 7.5 Siklus payroll: `DRAFT → APPROVED → PAID`/`CANCELLED`, slip gaji, posting jurnal
+  otomatis saat persetujuan, pembayaran lewat kas/bank.
+- [x] 7.6 Akuntansi inti: COA + mapping, jurnal immutable, idempotensi
+  `source_type + source_id + source_event`, jurnal pembalik, periode fiskal, tutup buku.
+- [x] 7.7 Integrasi otomatis: penerimaan material → tagihan + jurnal; pengiriman → faktur +
+  HPP + jurnal; payroll → jurnal beban/kewajiban; pembayaran → jurnal kas/bank.
+- [x] 7.8 Laporan: neraca saldo, laba rugi, neraca, buku besar, arus kas, umur piutang,
+  umur utang, dan rekap payroll; ekspor CSV mengikuti mesin laporan yang ada.
+- [x] 7.9 UI: halaman HR (absensi, cuti), payroll (daftar, detail, aksi), akuntansi
+  (dashboard, COA, jurnal, kas/bank, tutup buku, laporan keuangan).
+- [x] 7.10 Role & navigasi: `HR_STAFF`, `PAYROLL_ADMIN`, `FINANCE_STAFF`; quick login demo
+  tetap 8 akun, akun tambahan di-seed tanpa tombol masuk cepat.
+- [x] 7.11 Seed & backfill: data absensi/cuti/payroll contoh, akun COA tambahan, dan
+  `scripts/backfill-accounting.ts` untuk data produksi lama.
+- [x] 7.12 Pengujian: unit kalkulasi payroll, integration akuntansi/HR/payroll, E2E halaman
+  dan pembatasan role baru.
+- [x] 7.13 Dokumentasi: PRD, plan, API, demo, acceptance, README, dan panduan role `/docs`.
+
+### Definisi selesai F7
+- Payroll bulanan dapat dihitung, disetujui, dibayar, dan dijurnal tanpa intervensi SQL.
+- Laporan keuangan seimbang; jurnal tidak dapat diubah/dihapus; koreksi memakai pembalik.
+- Role baru tidak dapat membuka modul di luar izinnya; quick login tetap 8 akun.
+- `pnpm verify`, `pnpm build`, dan `pnpm test:e2e` lulus.
+
+**Checkpoint: tag `v1.1` = proyek final (ERP operasional + back-office).**
+
+### Keputusan yang masih terbuka
+- Pembagian final role HR vs Payroll vs Finance (implementasi memakai pemisahan saat ini).
+- Kebijakan pajak/BPJS detail (tarif default dapat dikonfigurasi; belum menggantikan konsultan pajak).
+
+---
+
+## 12. Risiko & mitigasi
 
 | # | Risiko | Mitigasi |
 |---|---|---|
@@ -282,12 +332,12 @@ Estimasi PRD (4–6 minggu) tetap relevan bila item bertanda *(opsional)* dilewa
 
 ---
 
-## 12. Definisi MVP selesai (ringkas PRD §2.3 & §12)
+## 13. Definisi proyek selesai (ringkas PRD §2.3 & §12)
 
-Pengguna dapat menyelesaikan **Sales Order → Material Planning → Purchasing → Material Receipt → Production → QC → Finished Goods → Shipment → Reporting** tanpa manipulasi database manual; semua perubahan konsisten & tertelusur; RBAC aktif di semua operasi; dashboard dari data aktual; audit log merekam aksi penting; unit/integration/E2E alur kritis lulus; migrasi bisa dijalankan dari nol; seed demo realistis; deployment hidup; README lengkap.
+Pengguna dapat menyelesaikan **Sales Order → Material Planning → Purchasing → Material Receipt → Production → QC → Finished Goods → Shipment → Reporting** dan **Karyawan → Absensi/Cuti → Payroll → Jurnal → Laporan Keuangan** tanpa manipulasi database manual; semua perubahan konsisten & tertelusur; RBAC aktif di semua operasi; dashboard dari data aktual; audit log merekam aksi penting; unit/integration/E2E alur kritis lulus; migrasi bisa dijalankan dari nol; seed demo realistis; deployment hidup; README lengkap.
 
 ---
 
-## 13. Aturan perubahan scope
+## 14. Aturan perubahan scope
 
 Setelah implementasi dimulai, perubahan scope dicatat di `docs/changelog-requirements.md` beserta dampaknya terhadap database, API, pengujian, dan jadwal (mengikuti penutup PRD). Perubahan besar dijadwalkan sebagai fase terpisah, bukan disisipkan diam-diam.

@@ -1,7 +1,7 @@
-# Backlog Pasca-MVP
+# Backlog Pasca-v1.1
 
-Kandidat pengembangan setelah tag **v1.0**. Belum ada komitmen jadwal; prioritas
-menyesuaikan kebutuhan demo/portofolio berikutnya.
+Kandidat pengembangan setelah tag **v1.1** (ERP operasional + HRIS/payroll/akuntansi).
+Belum ada komitmen jadwal; prioritas menyesuaikan kebutuhan demo/portofolio berikutnya.
 
 ## Keamanan & Kepatuhan
 
@@ -23,7 +23,11 @@ menyesuaikan kebutuhan demo/portofolio berikutnya.
 - **Produk jadi multi-level BOM** (sub-assembly) dan alternatif material pada BOM.
 - **Penjadwalan laporan**: ekspor terjadwal + template PDF/Excel resmi perusahaan.
 - **Multi-currency** untuk buyer/supplier ekspor; kurs harian.
-- **Integrasi akuntansi** (Accurate/Xero) dan **pengiriman** (API kurir, resi).
+- **Aset tetap & depresiasi**, budgeting, dan pusat biaya.
+- **E-filing pajak** (PPh 21/PPN) dan integrasi API bank untuk rekonsiliasi.
+- **Employee self-service**: slip gaji, pengajuan cuti, dan data pribadi.
+- **Rekrutmen, penilaian kinerja, dan pelatihan**.
+- **Integrasi eksternal** (Accurate/Xero, API kurir/resi).
 - **Portal buyer** (read-only status pesanan/pengiriman) dengan akses terbatas.
 
 ## Performa & Arsitektur

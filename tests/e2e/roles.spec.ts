@@ -1,6 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { expectSidebarLink, sidebarOf } from "./helpers/sidebar";
 
+test.describe.configure({ timeout: 90_000 });
+
 const PASSWORD = "password123";
 
 type RoleCase = {

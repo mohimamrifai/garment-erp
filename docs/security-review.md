@@ -1,16 +1,16 @@
 # Audit Otorisasi & Review Keamanan (F6.3–F6.4)
 
-Tanggal: 19 Oktober 2026 · Lingkup: aplikasi Garment ERP (build produksi `next start`, database seed).
+Tanggal: 24 Oktober 2026 · Lingkup: aplikasi Garment ERP v1.1 (build produksi `next start`, database seed).
 Dokumen ini merangkum hasil audit otorisasi menyeluruh (F6.3) dan review keamanan ringkas (F6.4).
 
 ## 1. Ringkasan
 
 | Area | Status | Catatan |
 |---|---|---|
-| Guard API (semua endpoint `/api/v1`) | ✅ | 67 route handler, semuanya lewat `requireApiPermission()` sebelum membaca body/query. |
-| Guard halaman dashboard | ✅ | 41 halaman; hanya `/dashboard` dan `/akses-ditolak` tanpa guard izin (keduanya boleh untuk semua role login). |
+| Guard API (semua endpoint `/api/v1`) | ✅ | 86 route handler, semuanya lewat `requireApiPermission()` sebelum membaca body/query. |
+| Guard halaman dashboard | ✅ | 55 halaman; hanya `/dashboard` dan `/akses-ditolak` tanpa guard izin (keduanya boleh untuk semua role login). |
 | Menu sidebar vs izin | ✅ | Visibilitas menu mengikuti `nav-config.ts`; penegakan sebenarnya tetap di halaman & route. |
-| Uji negatif keamanan | ✅ | `tests/e2e/security.spec.ts` (8 skenario) lulus terhadap build produksi. |
+| Uji negatif keamanan | ✅ | `tests/e2e/security.spec.ts` (10 skenario) lulus terhadap build produksi. |
 | Secrets | ✅ | Hanya lewat environment variable; `.env*` di-`.gitignore`, contoh aman di `.env.example`. |
 | Pesan error | ✅ | Tidak membocorkan query/schema/stack trace; kode mesin stabil. |
 | Cookie & sesi | ✅ | `HttpOnly`, `SameSite=Lax`, `Secure` di HTTPS, umur 7 hari, `updateAge` 1 hari. |
@@ -46,6 +46,9 @@ Hasil inventaris:
 | Laporan | `GET /api/v1/reports/export` | `report.view` + `canAccessReport(role)` per laporan |
 | Master data | `/api/v1/master/**` (12 submodul) | `master.*.view` (GET) / `master.*.manage` (mutasi) |
 | Pengguna | `GET/POST /api/v1/users`, `PATCH /:id`, `PUT /:id/roles`, `POST /:id/password`, `POST /:id/ban` | `user.*` (khusus ADMIN) |
+| HRIS | `/api/v1/hr/attendance`, `/api/v1/hr/leave-requests` | `hr.attendance.*`, `hr.leave.*` |
+| Payroll | `/api/v1/payroll/runs`, `/:id/approve`, `/:id/pay`, `/:id/cancel` | `payroll.view` / `.run` / `.approve` / `.pay` |
+| Akuntansi | `/api/v1/accounting/accounts`, `journals`, `payments`, `periods` | `accounting.view` / `.manage` / `.post` / `.pay` / `.close` |
 | Audit log | `GET /api/v1/audit-logs` + halaman `/settings/audit` | `audit.view` (khusus ADMIN) |
 
 Temuan & perbaikan:
@@ -96,7 +99,10 @@ Temuan & perbaikan:
 - Administrator tidak dapat mencabut role Administrator dari akun sendiri dan tidak dapat
   menonaktifkan akun sendiri (guard service + uji E2E).
 - Mutasi penting mencatat audit log (`recordAudit`) dalam transaksi yang sama, termasuk
-  transfer/penyesuaian stok, posting dokumen, alokasi, dan aksi pengguna.
+  transfer/penyesuaian stok, posting dokumen, alokasi, aksi pengguna, absensi/cuti,
+  payroll, jurnal, pembayaran, dan tutup buku.
+- Role back-office (`HR_STAFF`, `PAYROLL_ADMIN`, `FINANCE_STAFF`) tidak ditampilkan di
+  tombol masuk cepat; aksesnya tetap diperiksa di server dan diuji E2E (`finance.spec.ts`).
 
 ### Pesan error & data bocor
 

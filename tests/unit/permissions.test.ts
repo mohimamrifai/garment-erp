@@ -9,9 +9,9 @@ import {
 } from "@/lib/permissions";
 
 describe("RBAC: definisi role", () => {
-  it("memiliki 8 role unik sesuai PRD", () => {
-    expect(ROLE_CODES).toHaveLength(8);
-    expect(new Set(ROLE_CODES).size).toBe(8);
+  it("memiliki 11 role unik sesuai PRD", () => {
+    expect(ROLE_CODES).toHaveLength(11);
+    expect(new Set(ROLE_CODES).size).toBe(11);
     expect([...ROLE_SEED.map((role) => role.code)].sort()).toEqual([...ROLE_CODES].sort());
   });
 

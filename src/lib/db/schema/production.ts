@@ -67,6 +67,8 @@ export const productionOrders = pgTable(
     plannedQuantity: integer("planned_quantity").notNull(),
     plannedStartDate: date("planned_start_date").notNull(),
     plannedEndDate: date("planned_end_date").notNull(),
+    /** Akumulasi biaya material yang sudah dikeluarkan untuk SPK ini. */
+    materialCost: numeric("material_cost", { precision: 18, scale: 2 }).notNull().default("0"),
     status: productionOrderStatus("status").notNull().default("OPEN"),
     notes: text("notes"),
     /** Alasan tetap dijalankan meskipun material kurang (gate ketersediaan). */
@@ -86,6 +88,7 @@ export const productionOrders = pgTable(
     index("production_orders_status_idx").on(t.status),
     index("production_orders_planned_end_idx").on(t.plannedEndDate),
     check("production_orders_quantity_chk", sql`${t.plannedQuantity} > 0`),
+    check("production_orders_material_cost_chk", sql`${t.materialCost} >= 0`),
     check("production_orders_dates_chk", sql`${t.plannedEndDate} >= ${t.plannedStartDate}`),
   ],
 );
@@ -166,6 +169,8 @@ export const materialIssues = pgTable(
       .notNull()
       .references(() => warehouseLocations.id),
     issuedAt: date("issued_at").notNull(),
+    /** Nilai material yang dikeluarkan (harga pokok rata-rata saat issue). */
+    totalCost: numeric("total_cost", { precision: 18, scale: 2 }).notNull().default("0"),
     /** Catatan/alasan penyesuaian dari usulan BOM. */
     notes: text("notes"),
     /** Kunci anti-penggandaan dari klien (retry aman). */
@@ -176,6 +181,7 @@ export const materialIssues = pgTable(
   (t) => [
     index("material_issues_order_idx").on(t.productionOrderId),
     index("material_issues_issued_at_idx").on(t.issuedAt),
+    check("material_issues_total_cost_chk", sql`${t.totalCost} >= 0`),
   ],
 );
 

@@ -15,6 +15,9 @@ export const ROLE_CODES = [
   "PRODUCTION_SUPERVISOR",
   "QC_STAFF",
   "SHIPPING_STAFF",
+  "HR_STAFF",
+  "PAYROLL_ADMIN",
+  "FINANCE_STAFF",
 ] as const;
 
 export type RoleCode = (typeof ROLE_CODES)[number];
@@ -70,6 +73,21 @@ export const ROLE_SEED: readonly RoleSeed[] = [
     code: "SHIPPING_STAFF",
     name: "Staff Pengiriman",
     description: "Pengiriman dan dokumen jalan.",
+  },
+  {
+    code: "HR_STAFF",
+    name: "Staff HR",
+    description: "Data karyawan, absensi, cuti, dan administrasi kepegawaian.",
+  },
+  {
+    code: "PAYROLL_ADMIN",
+    name: "Admin Payroll",
+    description: "Perhitungan, persetujuan, dan pembayaran payroll.",
+  },
+  {
+    code: "FINANCE_STAFF",
+    name: "Staff Keuangan",
+    description: "Akuntansi, kas & bank, jurnal, dan laporan keuangan.",
   },
 ] as const;
 
@@ -134,6 +152,20 @@ export type Permission =
   | "shipment.create"
   | "shipment.post"
   | "shipment.cancel"
+  | "hr.attendance.view"
+  | "hr.attendance.manage"
+  | "hr.leave.view"
+  | "hr.leave.request"
+  | "hr.leave.approve"
+  | "payroll.view"
+  | "payroll.run"
+  | "payroll.approve"
+  | "payroll.pay"
+  | "accounting.view"
+  | "accounting.manage"
+  | "accounting.post"
+  | "accounting.close"
+  | "accounting.pay"
   | "report.view";
 
 /** Matriks izin: permission → role yang boleh. */
@@ -149,8 +181,14 @@ export const PERMISSION_MATRIX: Record<Permission, readonly RoleCode[]> = {
   "buyer.create": ["ADMIN", "MANAGER", "SALES"],
   "buyer.update": ["ADMIN", "MANAGER", "SALES"],
   "buyer.deactivate": ["ADMIN", "MANAGER", "SALES"],
-  "master.organization.view": ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
-  "master.organization.manage": ["ADMIN", "MANAGER"],
+  "master.organization.view": [
+    "ADMIN",
+    "MANAGER",
+    "PRODUCTION_SUPERVISOR",
+    "HR_STAFF",
+    "PAYROLL_ADMIN",
+  ],
+  "master.organization.manage": ["ADMIN", "MANAGER", "HR_STAFF"],
   "master.supplier.view": ["ADMIN", "MANAGER", "PURCHASING"],
   "master.supplier.manage": ["ADMIN", "MANAGER", "PURCHASING"],
   "master.uom.view": ["ADMIN", "MANAGER", "PURCHASING", "WAREHOUSE"],
@@ -201,6 +239,20 @@ export const PERMISSION_MATRIX: Record<Permission, readonly RoleCode[]> = {
   "shipment.create": ["ADMIN", "MANAGER", "SALES", "SHIPPING_STAFF"],
   "shipment.post": ["ADMIN", "MANAGER", "WAREHOUSE", "SHIPPING_STAFF"],
   "shipment.cancel": ["ADMIN", "MANAGER", "SHIPPING_STAFF"],
+  "hr.attendance.view": ["ADMIN", "MANAGER", "HR_STAFF", "PAYROLL_ADMIN"],
+  "hr.attendance.manage": ["ADMIN", "MANAGER", "HR_STAFF"],
+  "hr.leave.view": ["ADMIN", "MANAGER", "HR_STAFF", "PAYROLL_ADMIN"],
+  "hr.leave.request": ["ADMIN", "MANAGER", "HR_STAFF"],
+  "hr.leave.approve": ["ADMIN", "MANAGER", "HR_STAFF"],
+  "payroll.view": ["ADMIN", "MANAGER", "HR_STAFF", "PAYROLL_ADMIN", "FINANCE_STAFF"],
+  "payroll.run": ["ADMIN", "PAYROLL_ADMIN"],
+  "payroll.approve": ["ADMIN", "MANAGER", "PAYROLL_ADMIN"],
+  "payroll.pay": ["ADMIN", "PAYROLL_ADMIN", "FINANCE_STAFF"],
+  "accounting.view": ["ADMIN", "MANAGER", "FINANCE_STAFF"],
+  "accounting.manage": ["ADMIN", "FINANCE_STAFF"],
+  "accounting.post": ["ADMIN", "FINANCE_STAFF"],
+  "accounting.close": ["ADMIN", "FINANCE_STAFF"],
+  "accounting.pay": ["ADMIN", "FINANCE_STAFF"],
   "report.view": ROLE_CODES,
 };
 

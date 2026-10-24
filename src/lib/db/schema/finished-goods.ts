@@ -39,6 +39,9 @@ export const finishedGoods = pgTable(
       .notNull()
       .references(() => qcInspections.id),
     quantity: numeric("quantity", { precision: 16, scale: 4 }).notNull(),
+    /** Harga pokok per unit dari akumulasi biaya material SPK. */
+    unitCost: numeric("unit_cost", { precision: 18, scale: 4 }).notNull().default("0"),
+    totalCost: numeric("total_cost", { precision: 18, scale: 2 }).notNull().default("0"),
     notes: text("notes"),
     createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -49,6 +52,7 @@ export const finishedGoods = pgTable(
     index("finished_goods_order_idx").on(t.productionOrderId),
     uniqueIndex("finished_goods_inspection_uq").on(t.qcInspectionId),
     check("finished_goods_quantity_chk", sql`${t.quantity} > 0`),
+    check("finished_goods_cost_chk", sql`${t.unitCost} >= 0 and ${t.totalCost} >= 0`),
   ],
 );
 

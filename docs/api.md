@@ -306,15 +306,141 @@ hanya untuk status `DRAFT`.
 |---|---|---|
 | GET | `/api/v1/reports/export?report=<slug>&from=&to=` | `report.view` + role laporan |
 
-Slug: `sales-fulfillment`, `purchase-receipts`, `inventory-movements`,
+Slug operasional: `sales-fulfillment`, `purchase-receipts`, `inventory-movements`,
 `production-output`, `production-attainment`, `qc-defects`, `fg-shipments`.
+Slug keuangan: `trial-balance`, `income-statement`, `balance-sheet`, `general-ledger`,
+`cash-flow`, `ar-aging`, `ap-aging`, `payroll-summary`.
 Respons `text/csv` (RFC 4180 + BOM UTF-8), `Content-Disposition: attachment`.
 
 ```bash
 curl -b cookie.txt -OJ 'http://localhost:3000/api/v1/reports/export?report=sales-fulfillment&from=2026-09-20&to=2026-10-19'
 ```
 
-### 3.10 Master data
+### 3.10 HRIS
+
+| Method | Path | Izin |
+|---|---|---|
+| GET | `/api/v1/hr/attendance?month=&employeeId=&status=&page=&pageSize=` | `hr.attendance.view` |
+| POST | `/api/v1/hr/attendance` | `hr.attendance.manage` |
+| PATCH | `/api/v1/hr/attendance/{id}` | `hr.attendance.manage` |
+| DELETE | `/api/v1/hr/attendance/{id}` | `hr.attendance.manage` |
+| GET | `/api/v1/hr/leave-requests?status=&employeeId=&page=&pageSize=` | `hr.leave.view` |
+| POST | `/api/v1/hr/leave-requests` | `hr.leave.request` |
+| POST | `/api/v1/hr/leave-requests/{id}/approve` | `hr.leave.approve` |
+| POST | `/api/v1/hr/leave-requests/{id}/reject` | `hr.leave.approve` |
+| POST | `/api/v1/hr/leave-requests/{id}/cancel` | `hr.leave.approve` |
+
+Body absensi:
+
+```json
+{
+  "employeeId": "<uuid>",
+  "attendanceDate": "2026-10-24",
+  "status": "PRESENT",
+  "checkIn": "08:00",
+  "checkOut": "17:00",
+  "overtimeHours": 2,
+  "notes": "Lembur produksi"
+}
+```
+
+Status absensi: `PRESENT`, `LATE`, `ABSENT`, `LEAVE`, `SICK`, `HOLIDAY`.
+Absensi unik per karyawan per tanggal.
+
+Body cuti:
+
+```json
+{
+  "employeeId": "<uuid>",
+  "leaveTypeId": "<uuid>",
+  "startDate": "2026-10-26",
+  "endDate": "2026-10-27",
+  "reason": "Keperluan keluarga"
+}
+```
+
+Approve dan cancel tidak menerima body. Reject menerima `{ "reason": "..." }` opsional
+(default: "Tidak memenuhi ketentuan.").
+
+### 3.11 Payroll
+
+| Method | Path | Izin |
+|---|---|---|
+| GET | `/api/v1/payroll/runs?status=&page=&pageSize=` | `payroll.view` |
+| POST | `/api/v1/payroll/runs` | `payroll.run` |
+| POST | `/api/v1/payroll/runs/{id}/approve` | `payroll.approve` |
+| POST | `/api/v1/payroll/runs/{id}/pay` | `payroll.pay` |
+| POST | `/api/v1/payroll/runs/{id}/cancel` | `payroll.run` |
+
+Body buat payroll: `{ "period": "2026-10" }` (satu payroll per periode).
+Payroll dihitung dari karyawan aktif, absensi, dan cuti disetujui pada periode tersebut.
+Persetujuan memposting jurnal beban gaji, utang pajak/BPJS, dan utang gaji secara idempotent.
+
+Body pembayaran:
+
+```json
+{
+  "accountId": "<uuid-akun-kas-bank>",
+  "date": "2026-10-28"
+}
+```
+
+Jumlah pembayaran selalu sama dengan total gaji bersih payroll. Body pembatalan:
+`{ "reason": "..." }` (hanya payroll `DRAFT`).
+
+### 3.12 Akuntansi
+
+| Method | Path | Izin |
+|---|---|---|
+| GET | `/api/v1/accounting/accounts?query=&type=` | `accounting.view` |
+| POST | `/api/v1/accounting/accounts` | `accounting.manage` |
+| PATCH | `/api/v1/accounting/accounts/{id}` | `accounting.manage` |
+| GET | `/api/v1/accounting/journals?query=&status=&page=&pageSize=` | `accounting.view` |
+| POST | `/api/v1/accounting/journals` | `accounting.manage` |
+| GET | `/api/v1/accounting/journals/{id}` | `accounting.view` |
+| POST | `/api/v1/accounting/journals/{id}/post` | `accounting.post` |
+| POST | `/api/v1/accounting/journals/{id}/reverse` | `accounting.post` |
+| GET | `/api/v1/accounting/payments?type=&page=&pageSize=` | `accounting.view` |
+| POST | `/api/v1/accounting/payments` | `accounting.pay` |
+| GET | `/api/v1/accounting/periods` | `accounting.view` |
+| POST | `/api/v1/accounting/periods` | `accounting.close` |
+
+Body jurnal manual:
+
+```json
+{
+  "date": "2026-10-24",
+  "description": "Penyesuaian kas kecil",
+  "cashFlowCategory": "OPERATING",
+  "lines": [
+    { "accountId": "<uuid>", "debit": 150000, "credit": 0 },
+    { "accountId": "<uuid>", "debit": 0, "credit": 150000 }
+  ]
+}
+```
+
+Jurnal draf dapat diposting lewat `/post`; jurnal posted dikoreksi lewat `/reverse`
+(body `{ "date": "...", "reason": "..." }`), bukan dihapus.
+
+Body pembayaran/penerimaan:
+
+```json
+{
+  "type": "RECEIPT",
+  "date": "2026-10-24",
+  "amount": 6300000,
+  "accountId": "<uuid-akun-kas-bank>",
+  "referenceType": "SALES_INVOICE",
+  "referenceId": "<uuid-faktur>",
+  "notes": "Pelunasan faktur"
+}
+```
+
+`referenceType`: `SALES_INVOICE` (harus `RECEIPT`), `PURCHASE_BILL` (harus `PAYMENT`),
+atau `PAYROLL_RUN` (harus `PAYMENT`, jumlah = total neto). Body tutup buku:
+`{ "year": 2026, "month": 10 }`.
+
+### 3.13 Master data
 
 Pola seragam: `GET` (daftar) + `POST` (buat) pada koleksi, `PATCH /{id}` untuk ubah
 (nonaktifkan memakai `isActive: false`).
@@ -336,7 +462,7 @@ Pola seragam: `GET` (daftar) + `POST` (buat) pada koleksi, `PATCH /{id}` untuk u
 | Versi BOM | `POST /api/v1/master/boms/{id}/version` | `master.bom.manage` |
 | Aktivasi BOM | `POST /api/v1/master/boms/{id}/activate` / `deactivate` | `master.bom.manage` |
 
-### 3.11 Pengguna (khusus Administrator)
+### 3.14 Pengguna (khusus Administrator)
 
 | Method | Path | Izin |
 |---|---|---|
@@ -364,7 +490,7 @@ Pola seragam: `GET` (daftar) + `POST` (buat) pada koleksi, `PATCH /{id}` untuk u
 Role valid: `ADMIN`, `MANAGER`, `SALES`, `PURCHASING`, `WAREHOUSE`,
 `PRODUCTION_SUPERVISOR`, `QC_STAFF`, `SHIPPING_STAFF`.
 
-### 3.12 Audit log (khusus Administrator)
+### 3.15 Audit log (khusus Administrator)
 
 | Method | Path | Izin |
 |---|---|---|
@@ -374,7 +500,7 @@ Respons read-only berisi `action`, `entityType`, `entityId`, `details`, `created
 dan aktor. Halaman UI: `/settings/audit` (tabel + pencarian + filter aksi). Audit log
 tidak menyediakan operasi ubah/hapus.
 
-### 3.13 Asisten AI
+### 3.16 Asisten AI
 
 | Method | Path | Izin |
 |---|---|---|

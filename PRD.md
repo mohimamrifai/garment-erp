@@ -1,7 +1,7 @@
 # PRODUCT REQUIREMENTS DOCUMENT (PRD)
 # Garment ERP System
 
-**Versi:** 1.0.0 — Final  
+**Versi:** 1.1.0 — Final (termasuk HRIS, Payroll & Akuntansi)  
 **Status:** Approved for Implementation  
 **Jenis Produk:** Web-based ERP untuk industri manufaktur garmen  
 **Target:** Portofolio Full-stack Web Developer  
@@ -31,6 +31,7 @@ Membangun simulasi ERP manufaktur garmen yang menunjukkan bagaimana teknologi we
 - Staf purchasing dan warehouse.
 - Staf produksi dan quality control.
 - Staf sales dan pengiriman.
+- Staf HR, payroll, dan keuangan.
 - Administrator sistem.
 
 ### 1.4 Tujuan Pengembangan
@@ -60,32 +61,41 @@ Membangun simulasi ERP manufaktur garmen yang menunjukkan bagaimana teknologi we
 | M09 | Finished Goods & Shipment | Barang jadi dan pengiriman | P0 |
 | M10 | Reporting | Laporan dan ekspor CSV | P0 |
 | M11 | Audit Log | Pencatatan perubahan penting | P0 |
+| M12 | HRIS | Data karyawan, kontrak, absensi, cuti | P0 |
+| M13 | Payroll | Gaji bulanan, BPJS, PPh 21, slip gaji | P0 |
+| M14 | Accounting | COA, jurnal, AR/AP, kas/bank, laporan keuangan | P0 |
 
-Semua modul P0 wajib berfungsi sebelum MVP dinyatakan selesai.
+Keempat belas modul P0 wajib berfungsi sebelum proyek dinyatakan selesai.
 
-### 2.2 Fitur yang Tidak Termasuk MVP
+### 2.2 Fitur yang Tidak Termasuk Scope Final
 
-Fitur berikut ditunda agar proyek tetap realistis untuk satu developer:
+Fitur berikut tetap di luar scope agar proyek realistis untuk satu developer:
 
-- Payroll dan perhitungan gaji.
-- Akuntansi dan laporan keuangan lengkap.
-- Absensi biometrik.
-- Integrasi mesin pabrik.
-- Barcode scanner fisik.
-- Aplikasi mobile native.
-- Multi-company dan multi-factory.
+- Multi-currency dan kurs harian.
+- Aset tetap, depresiasi, dan budgeting.
+- Konsolidasi multi-company dan multi-factory.
+- E-filing pajak dan integrasi API bank.
+- Employee self-service (pengajuan cuti/gaji oleh karyawan sendiri).
+- Rekrutmen, penilaian kinerja, dan pelatihan.
+- Absensi biometrik/fingerprint dan integrasi mesin pabrik.
+- Barcode scanner fisik dan aplikasi mobile native.
 - Integrasi dengan ERP eksternal.
 - Advanced MRP dan optimasi kapasitas mesin.
 - AI forecasting.
 - Integrasi email, WhatsApp, atau notifikasi eksternal.
 
-Data dasar karyawan dan departemen tetap tersedia sebagai master data. HRIS lengkap menjadi pengembangan berikutnya.
+Data karyawan, absensi, cuti, payroll bulanan, BPJS, PPh 21, akuntansi double-entry,
+AR/AP, kas/bank, tutup buku, dan laporan keuangan **termasuk** dalam scope final.
 
-### 2.3 Definisi MVP Selesai
+### 2.3 Definisi Proyek Selesai
 
-MVP dianggap selesai jika pengguna dapat menyelesaikan alur berikut tanpa manipulasi database manual:
+Proyek dianggap selesai jika pengguna dapat menyelesaikan alur berikut tanpa manipulasi database manual:
 
 **Sales Order → Material Planning → Purchasing → Material Receipt → Production → QC → Finished Goods → Shipment → Reporting**
+
+serta alur pendukung keuangan:
+
+**Karyawan & Kontrak → Absensi/Cuti → Payroll → Persetujuan & Pembayaran → Jurnal → Laporan Keuangan**
 
 Setiap perubahan harus tersimpan secara konsisten dan dapat ditelusuri.
 
@@ -105,6 +115,9 @@ Setiap perubahan harus tersimpan secara konsisten dan dapat ditelusuri.
 | Production Supervisor | SPK dan progres produksi |
 | QC Staff | Inspeksi dan hasil QC |
 | Shipping Staff | Barang jadi dan pengiriman |
+| HR Staff | Data karyawan, kontrak, absensi, cuti |
+| Payroll Admin | Perhitungan, persetujuan, dan pembayaran payroll |
+| Finance Staff | Akuntansi, kas/bank, jurnal, laporan keuangan |
 
 Satu pengguna dapat memperoleh lebih dari satu role jika diizinkan administrator.
 
@@ -297,7 +310,7 @@ Aturan:
 
 ### FR-11 — Reporting & Audit
 
-Laporan MVP:
+Laporan operasional:
 - Sales order dan pemenuhan pesanan.
 - Purchase order dan penerimaan.
 - Stok dan mutasi material.
@@ -306,9 +319,70 @@ Laporan MVP:
 - Hasil QC dan defect rate.
 - Stok barang jadi dan pengiriman.
 
-Ekspor mendukung CSV.
+Laporan keuangan:
+- Neraca saldo, laba rugi, neraca, dan buku besar.
+- Arus kas, umur piutang, umur utang, dan rekap payroll.
+
+Ekspor mendukung CSV dengan filter periode dan scoping role.
 
 Audit log mencatat aktor, tindakan, entitas, waktu, dan ringkasan perubahan penting. Log tidak boleh menyimpan password, token, atau rahasia aplikasi.
+
+---
+
+
+### FR-12 — HRIS
+
+Fitur:
+- Data karyawan: departemen, jabatan, tipe kerja, tanggal masuk/keluar, kontrak.
+- Data payroll karyawan: gaji pokok, tunjangan tetap, status PTKP, data bank, NPWP.
+- Absensi bulanan: hadir, terlambat, tidak hadir, cuti, sakit, libur, dan jam lembur.
+- Pengajuan cuti, persetujuan/penolakan, dan pembatalan.
+- Jenis cuti dengan kuota tahunan dan penanda dibayar/tidak dibayar.
+
+Aturan:
+- Absensi unik per karyawan per tanggal.
+- Cuti tidak dibayar mengurangi gaji pada payroll.
+- Cuti yang disetujui tidak boleh tumpang tindih untuk karyawan yang sama.
+- Perubahan data kepegawaian dicatat di audit log.
+- Tidak ada self-service karyawan; pengelolaan oleh HR Staff/Admin.
+
+### FR-13 — Payroll
+
+Fitur:
+- Payroll bulanan per periode `YYYY-MM` dengan status `DRAFT → APPROVED → PAID` atau `CANCELLED`.
+- Perhitungan gaji pokok, tunjangan, lembur, potongan ketidakhadiran/cuti tidak dibayar.
+- BPJS Kesehatan, JHT, JP, JKK, JKM dengan tarif yang dapat dikonfigurasi.
+- PPh 21 progresif berdasarkan PTKP dan status pajak karyawan.
+- Slip gaji per karyawan dengan rincian komponen.
+- Posting jurnal payroll otomatis saat persetujuan; pembayaran lewat kas/bank.
+
+Aturan:
+- Satu payroll per periode (tidak boleh ganda).
+- Payroll hanya dapat diubah/dibatalkan saat `DRAFT`.
+- Persetujuan memposting jurnal beban gaji, utang pajak/BPJS, dan utang gaji.
+- Pembayaran payroll harus sama dengan total gaji bersih dan memposting jurnal kas/bank.
+- Perhitungan menggunakan pembulatan uang dua desimal dan tarif default yang terdokumentasi.
+
+### FR-14 — Accounting & Financial Reports
+
+Fitur:
+- Bagan akun (COA) dengan tipe, saldo normal, akun induk, dan penanda kas/bank.
+- Pemetaan akun otomatis untuk penjualan, pembelian, persediaan, HPP, payroll, dan pajak.
+- Jurnal umum manual (draf → posting) dan jurnal otomatis dari transaksi operasional.
+- Buku besar, neraca saldo, laba rugi, neraca, arus kas, umur piutang, umur utang.
+- Faktur penjualan otomatis dari pengiriman; tagihan pembelian otomatis dari penerimaan material.
+- Pembayaran/penerimaan kas/bank yang merujuk tepat satu dokumen (faktur, tagihan, atau payroll).
+- Periode fiskal dan tutup buku bulanan.
+
+Aturan:
+- Double-entry: total debit = total kredit untuk setiap jurnal.
+- Jurnal yang sudah diposting tidak dapat diubah atau dihapus; koreksi memakai jurnal pembalik.
+- Idempotensi jurnal otomatis berdasarkan `source_type + source_id + source_event`.
+- Jurnal `POSTED` dan `REVERSED` tetap masuk laporan agar pembalik saling meniadakan.
+- Tidak boleh membuat/memposting jurnal pada periode yang sudah ditutup.
+- PPN default 11% dan dapat diubah di pengaturan akuntansi.
+- Persediaan memakai weighted-average; nilai persediaan tercermin di `inventory_costs`.
+- Laporan keuangan mengikuti SAK EMKM sederhana dan hanya dalam IDR.
 
 ---
 
@@ -350,6 +424,27 @@ Audit log mencatat aktor, tindakan, entitas, waktu, dan ringkasan perubahan pent
 
 ---
 
+
+### Workflow D — HRIS ke Payroll
+
+1. HR melengkapi data karyawan, kontrak, gaji pokok, tunjangan, status pajak, dan data bank.
+2. HR mencatat absensi bulanan dan memproses pengajuan cuti.
+3. Payroll Admin membuat payroll periode berjalan dari karyawan aktif, absensi, dan cuti disetujui.
+4. Sistem menghitung lembur, potongan, BPJS, dan PPh 21, lalu menghasilkan slip gaji.
+5. Payroll Admin/Manager menyetujui payroll; jurnal beban gaji dan kewajiban diposting.
+6. Finance/Payroll Admin membayar payroll melalui akun kas/bank; jurnal pembayaran diposting.
+
+### Workflow E — Accounting & Financial Closing
+
+1. Transaksi penjualan, penerimaan material, produksi, dan payroll memicu jurnal otomatis yang idempotent.
+2. Finance memeriksa jurnal, memposting jurnal manual, dan mencatat pembayaran/penerimaan kas/bank.
+3. Sistem memperbarui subledger AR/AP dan status faktur/tagihan.
+4. Finance membuka laporan keuangan dan mencocokkan neraca saldo, laba rugi, neraca, serta arus kas.
+5. Setelah semua jurnal periode diposting, Finance menutup periode fiskal.
+6. Koreksi setelah tutup buku dilakukan lewat jurnal pembalik pada periode terbuka berikutnya.
+
+---
+
 ## 6. ERD — Final Logical Data Model
 
 Rancangan database berorientasi pada transaksi yang dapat ditelusuri. Tabel transaksi menyimpan riwayat operasional, sedangkan saldo persediaan digunakan sebagai proyeksi terkini yang harus konsisten dengan mutasi.
@@ -375,7 +470,7 @@ Rancangan database berorientasi pada transaksi yang dapat ditelusuri. Tabel tran
 - role_id (FK → roles.id)
 - PK gabungan: user_id, role_id
 
-Role MVP dapat didefinisikan sebagai role tetap pada aplikasi. Tabel permissions terpisah dapat ditambahkan jika kebutuhan otorisasi makin kompleks.
+Role final didefinisikan sebagai role tetap pada aplikasi. Tabel permissions terpisah dapat ditambahkan jika kebutuhan otorisasi makin kompleks.
 
 ### 6.2 Organization & Master Data
 
@@ -676,7 +771,72 @@ Pengiriman harus divalidasi terhadap stok barang jadi yang lolos QC dan saldo ku
 
 Audit log tidak menyediakan operasi pengeditan atau penghapusan melalui antarmuka aplikasi normal.
 
-### 6.11 Relasi Inti
+### 6.11 HRIS & Payroll
+
+**employees** (diperluas)
+- basic_salary, fixed_allowance, tax_status
+- bpjs_kesehatan_number, bpjs_ketenagakerjaan_number, npwp
+- bank_name, bank_account_number, bank_account_name
+- contract_start_date, contract_end_date, resign_date
+
+**attendance_records**
+- employee_id (FK → employees.id), attendance_date (unik per karyawan)
+- status, check_in, check_out, overtime_hours, notes
+
+**leave_types**
+- code (UNIQUE), name, is_paid, max_days_per_year
+
+**leave_requests**
+- employee_id, leave_type_id, start_date, end_date, status
+- reason, approved_by, approved_at, rejection_reason
+
+**payroll_runs**
+- number (UNIQUE), period (`YYYY-MM`, UNIQUE), status
+- total_gross, total_deductions, total_net, total_employer_contributions
+- journal_entry_id, approved_by/at, paid_at, payment_account_id
+
+**payslips**
+- payroll_run_id, employee_id, komponen gaji/lembur/potongan
+- bpjs_kesehatan, bpjs_jht, bpjs_jp, bpjs_jkk, bpjs_jkm
+- pph21, net, bank snapshot
+
+### 6.12 Accounting
+
+**accounts**
+- code (UNIQUE), name, type, normal_balance, parent_id
+- is_cash_bank, bank_name, account_number, is_active
+
+**account_mappings**
+- key (UNIQUE, mis. `ACCOUNTS_RECEIVABLE`), account_id
+
+**accounting_settings**
+- vat_rate, company_name, npwp, address
+
+**fiscal_periods**
+- year, month (UNIQUE bersama), start_date, end_date, status (OPEN/CLOSED)
+
+**journal_entries**
+- number (UNIQUE), journal_date, period_id, description, status
+- cash_flow_category, source_type, source_id, source_event (UNIQUE bersama)
+- reversal_of_id, posted_at, posted_by
+
+**journal_lines**
+- journal_entry_id, account_id, description, debit, credit
+
+**sales_invoices / sales_invoice_items**
+- number, shipment_id, buyer_id, invoice_date, due_date, total, amount_paid, status
+
+**purchase_bills / purchase_bill_items**
+- number, receipt_id, supplier_id, bill_date, due_date, total, amount_paid, status
+
+**payments**
+- number, type (RECEIPT/PAYMENT), payment_date, amount, account_id
+- reference_type, reference_id, party_type, party_id, journal_entry_id
+
+**inventory_costs**
+- material_id/location_id, quantity, unit_cost, total_value (weighted-average)
+
+### 6.13 Relasi Inti
 
 - Buyer 1:N Sales Orders.
 - Sales Order 1:N Sales Order Items.
@@ -695,6 +855,12 @@ Audit log tidak menyediakan operasi pengeditan atau penghapusan melalui antarmuk
 - Sales Order 1:N Shipments.
 - Shipment 1:N Shipment Items.
 - User 1:N Audit Logs.
+- Employee 1:N Attendance Records.
+- Employee 1:N Leave Requests.
+- Payroll Run 1:N Payslips.
+- Journal Entry 1:N Journal Lines.
+- Sales Invoice 1:N Payments (lewat referensi dokumen).
+- Purchase Bill 1:N Payments (lewat referensi dokumen).
 
 **Catatan integritas:** diagram konseptual di atas perlu diwujudkan dengan foreign keys, unique constraints, check constraints, transaksi database, dan validasi layanan. Aturan yang melibatkan banyak baris, seperti total penerimaan atau batas kuantitas pengiriman, tidak cukup hanya menggunakan validasi form.
 
@@ -721,10 +887,10 @@ Pendekatan ini lebih realistis daripada microservices untuk proyek portofolio ya
 | ORM | Drizzle ORM |
 | Migrations | Drizzle Kit |
 | Charts | Recharts |
-| Authentication | Auth.js atau implementasi autentikasi teruji yang kompatibel |
+| Authentication | Better Auth (email + password, sesi cookie, RBAC) |
 | Testing | Vitest dan Playwright |
 | Version control | Git dan GitHub |
-| Deployment | Vercel dan layanan PostgreSQL yang sesuai paket gratis |
+| Deployment | Vercel + Neon Postgres (paket gratis) |
 
 Pemilihan layanan eksternal harus diverifikasi terhadap kuota, masa aktif, kebutuhan kartu, dan syarat terbaru sebelum deployment.
 
@@ -758,7 +924,10 @@ garment-erp/
 │   │   │   ├── production/
 │   │   │   ├── quality-control/
 │   │   │   ├── shipments/
-│   │   │   ├── master-data/
+│   │   │   ├── master/
+│   │   │   ├── hr/
+│   │   │   ├── payroll/
+│   │   │   ├── accounting/
 │   │   │   ├── reports/
 │   │   │   └── settings/
 │   │   └── api/
@@ -777,7 +946,10 @@ garment-erp/
 │   │   ├── production/
 │   │   ├── quality-control/
 │   │   ├── shipping/
-│   │   ├── reporting/
+│   │   ├── hr/
+│   │   ├── payroll/
+│   │   ├── accounting/
+│   │   ├── reports/
 │   │   └── audit/
 │   ├── lib/
 │   │   ├── auth/
@@ -843,6 +1015,12 @@ Contoh:
 - `POST /api/v1/inventory/adjustments`
 - `POST /api/v1/qc-inspections`
 - `POST /api/v1/shipments`
+- `POST /api/v1/hr/attendance`
+- `POST /api/v1/hr/leave-requests`
+- `POST /api/v1/payroll/runs`
+- `POST /api/v1/payroll/runs/{id}/approve`
+- `POST /api/v1/accounting/journals`
+- `POST /api/v1/accounting/payments`
 
 Operasi posting transaksi harus memiliki validasi status, otorisasi, dan proteksi terhadap pengiriman request berulang. Untuk operasi kritis, gunakan idempotency key atau mekanisme unik lain yang sesuai.
 
@@ -905,6 +1083,10 @@ Endpoint tidak wajib dibuat terpisah untuk semua operasi jika Server Actions ata
 - Output produksi memvalidasi kuantitas tahap sebelumnya.
 - QC akhir menentukan barang yang dapat dikirim.
 - Pengiriman memperbarui saldo pesanan dengan benar.
+- Payroll menghitung lembur, cuti tidak dibayar, BPJS, dan PPh 21 sesuai tarif.
+- Persetujuan payroll memposting jurnal yang seimbang dan idempotent.
+- Jurnal pembalik meniadakan jurnal asli tanpa menghapus riwayat.
+- Laporan keuangan (neraca saldo, laba rugi, neraca, arus kas) konsisten dengan jurnal.
 
 ### End-to-End Tests
 - Login sebagai role berbeda.
@@ -913,6 +1095,9 @@ Endpoint tidak wajib dibuat terpisah untuk semua operasi jika Server Actions ata
 - Menerima material dari purchase order.
 - Menyelesaikan QC dan pengiriman.
 - Memastikan pengguna tanpa izin ditolak.
+- Membuat payroll, menyetujui, dan membayar.
+- Mencatat absensi/cuti dan melihat pengaruhnya ke payroll.
+- Membuka jurnal, kas/bank, tutup buku, dan laporan keuangan.
 
 ### Security Tests
 - Pengguna tanpa sesi tidak dapat mengakses endpoint privat.
@@ -965,6 +1150,13 @@ Endpoint tidak wajib dibuat terpisah untuk semua operasi jika Server Actions ata
 - Deployment.
 - Dokumentasi teknis dan screenshot portofolio.
 
+### Phase 7 — HRIS, Payroll & Accounting (penambahan final)
+- Schema karyawan/payroll, absensi, cuti, dan akuntansi.
+- Perhitungan BPJS/PPh 21, slip gaji, persetujuan, dan pembayaran payroll.
+- COA, jurnal immutable, AR/AP, kas/bank, periode fiskal, dan tutup buku.
+- Laporan keuangan dan integrasi otomatis dari penjualan, pembelian, produksi, dan payroll.
+- Backfill data produksi lama + pengujian unit/integration/E2E.
+
 Estimasi awal adalah sekitar empat hingga enam minggu dengan pengerjaan konsisten, tetapi waktu sebenarnya bergantung pada kedalaman pengujian dan kompleksitas implementasi.
 
 ---
@@ -1001,6 +1193,9 @@ Proyek dapat dinyatakan siap dipresentasikan jika:
 - [ ] Database migrations dapat dijalankan dari awal.
 - [ ] Seed data menghasilkan skenario demo yang realistis.
 - [ ] Deployment dapat diakses sesuai batas layanan yang dipilih.
+- [ ] Payroll bulanan dihitung, disetujui, dibayar, dan diposting ke akuntansi.
+- [ ] Laporan keuangan (neraca saldo, laba rugi, neraca, arus kas) konsisten dan seimbang.
+- [ ] Jurnal immutable, idempotent, dan koreksi memakai jurnal pembalik.
 - [ ] README menjelaskan setup, akun demo, arsitektur, dan batasan proyek.
 
 ---
@@ -1016,13 +1211,16 @@ Keputusan berikut menjadi acuan implementasi:
 5. **ORM:** Drizzle ORM.
 6. **Validation:** Zod.
 7. **UI:** Tailwind CSS + shadcn/ui.
-8. **Scope:** 11 modul MVP yang tercantum pada dokumen.
+8. **Scope:** 14 modul final yang tercantum pada dokumen.
 9. **Database design:** Relational schema dengan foreign keys, constraints, dan transaksi atomik.
 10. **Inventory:** Mutation ledger sebagai riwayat transaksi; saldo sebagai proyeksi yang harus direkonsiliasi.
 11. **Production:** Tracking cutting, sewing, finishing, dan packing.
 12. **Quality:** Inspeksi, defect, dan rework dengan kontrol kuantitas.
 13. **Deployment:** Paket gratis yang memenuhi kebutuhan demonstrasi, tanpa ketergantungan pada VPS berbayar.
-14. **Development order:** Foundation → Master Data & Sales → Purchasing & Inventory → Production & QC → Shipment & Reporting → Release.
-15. **Definition of Done:** Semua acceptance criteria kritis terpenuhi dan didemonstrasikan.
+14. **Development order:** Foundation → Master Data & Sales → Purchasing & Inventory → Production & QC → Shipment & Reporting → HRIS/Payroll → Accounting → Release.
+15. **HRIS/Payroll:** Karyawan, kontrak, absensi manual/import, cuti, payroll bulanan, BPJS, PPh 21, slip gaji; tanpa self-service.
+16. **Accounting:** Double-entry, jurnal immutable, AR/AP, kas/bank, periode fiskal, tutup buku, laporan SAK EMKM; hanya IDR.
+17. **Roles:** 11 role; quick login demo tetap 8 akun, sedangkan HR/Payroll/Finance memakai akun tambahan.
+18. **Definition of Done:** Semua acceptance criteria kritis terpenuhi dan didemonstrasikan.
 
 **Dokumen ini menjadi baseline pengembangan MVP.** Perubahan scope setelah implementasi dimulai harus dicatat sebagai perubahan kebutuhan, beserta dampaknya terhadap database, arsitektur, pengujian, dan jadwal.

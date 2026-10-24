@@ -1,14 +1,19 @@
 import {
   ArrowLeftRight,
+  Banknote,
   BarChart3,
   BookOpen,
+  BookOpenCheck,
   Boxes,
   Building2,
+  CalendarCheck,
+  CalendarDays,
   CircleHelp,
   ClipboardCheck,
   Factory,
   FileText,
   Handshake,
+  Landmark,
   LayoutDashboard,
   ListTree,
   Package,
@@ -25,6 +30,7 @@ import {
   Truck,
   Users,
   UsersRound,
+  Wallet,
   Warehouse,
   type LucideIcon,
 } from "lucide-react";
@@ -82,19 +88,85 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         title: "Departemen",
         href: "/master/departments",
         icon: Building2,
-        roles: ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
+        roles: ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR", "HR_STAFF"],
       },
       {
         title: "Karyawan",
         href: "/master/employees",
         icon: UsersRound,
-        roles: ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
+        roles: ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR", "HR_STAFF", "PAYROLL_ADMIN"],
       },
       {
         title: "Lini Produksi",
         href: "/master/lines",
         icon: Route,
         roles: ["ADMIN", "MANAGER", "PRODUCTION_SUPERVISOR"],
+      },
+    ],
+  },
+  {
+    label: "SDM & Payroll",
+    icon: UsersRound,
+    items: [
+      {
+        title: "Absensi",
+        href: "/hr/attendance",
+        icon: CalendarCheck,
+        roles: ["ADMIN", "MANAGER", "HR_STAFF", "PAYROLL_ADMIN"],
+      },
+      {
+        title: "Cuti",
+        href: "/hr/leave",
+        icon: CalendarDays,
+        roles: ["ADMIN", "MANAGER", "HR_STAFF", "PAYROLL_ADMIN"],
+      },
+      {
+        title: "Payroll",
+        href: "/payroll",
+        icon: Wallet,
+        roles: ["ADMIN", "MANAGER", "HR_STAFF", "PAYROLL_ADMIN", "FINANCE_STAFF"],
+      },
+    ],
+  },
+  {
+    label: "Keuangan",
+    icon: Landmark,
+    items: [
+      {
+        title: "Akuntansi",
+        href: "/accounting",
+        icon: Landmark,
+        roles: ["ADMIN", "MANAGER", "FINANCE_STAFF"],
+      },
+      {
+        title: "Bagan Akun",
+        href: "/accounting/accounts",
+        icon: BookOpenCheck,
+        roles: ["ADMIN", "FINANCE_STAFF"],
+      },
+      {
+        title: "Jurnal",
+        href: "/accounting/journals",
+        icon: ScrollText,
+        roles: ["ADMIN", "MANAGER", "FINANCE_STAFF"],
+      },
+      {
+        title: "Kas & Bank",
+        href: "/accounting/payments",
+        icon: Banknote,
+        roles: ["ADMIN", "MANAGER", "FINANCE_STAFF"],
+      },
+      {
+        title: "Tutup Buku",
+        href: "/accounting/periods",
+        icon: CalendarCheck,
+        roles: ["ADMIN", "FINANCE_STAFF"],
+      },
+      {
+        title: "Laporan Keuangan",
+        href: "/accounting/reports",
+        icon: BarChart3,
+        roles: ["ADMIN", "MANAGER", "FINANCE_STAFF"],
       },
     ],
   },
@@ -257,6 +329,16 @@ const PATH_LABELS: Record<string, string> = {
   "/master/uoms": "Satuan",
   "/master/suppliers": "Supplier",
   "/master/warehouses": "Gudang",
+  "/hr": "SDM & Payroll",
+  "/hr/attendance": "Absensi",
+  "/hr/leave": "Cuti",
+  "/payroll": "Payroll",
+  "/accounting": "Akuntansi",
+  "/accounting/accounts": "Bagan Akun",
+  "/accounting/journals": "Jurnal",
+  "/accounting/payments": "Kas & Bank",
+  "/accounting/periods": "Tutup Buku",
+  "/accounting/reports": "Laporan Keuangan",
   "/purchasing": "Pembelian",
   "/purchasing/receipts": "Penerimaan Material",
   "/inventory": "Inventori",
@@ -293,7 +375,7 @@ export function labelForPath(path: string): string {
 export type Breadcrumb = { href?: string; label: string };
 
 /** Path yang hanya berfungsi sebagai label grup (tidak punya halaman sendiri). */
-const NON_PAGE_PATHS = new Set(["/master", "/settings"]);
+const NON_PAGE_PATHS = new Set(["/master", "/settings", "/hr"]);
 
 /** Pecah pathname menjadi breadcrumb, mis. /settings/users → Pengaturan / Pengguna. */
 export function breadcrumbsForPath(pathname: string): Breadcrumb[] {

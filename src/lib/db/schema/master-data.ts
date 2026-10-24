@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   index,
   numeric,
   pgTable,
@@ -56,6 +57,28 @@ export const employees = pgTable(
       .$type<"ACTIVE" | "INACTIVE">(),
     phone: text("phone"),
     email: text("email"),
+    /** Data kepegawaian & payroll (F7). */
+    joinDate: date("join_date"),
+    employmentType: text("employment_type")
+      .notNull()
+      .default("PERMANENT")
+      .$type<"PERMANENT" | "CONTRACT" | "DAILY">(),
+    contractStartDate: date("contract_start_date"),
+    contractEndDate: date("contract_end_date"),
+    resignDate: date("resign_date"),
+    birthDate: date("birth_date"),
+    address: text("address"),
+    basicSalary: numeric("basic_salary", { precision: 16, scale: 2 }).notNull().default("0"),
+    fixedAllowance: numeric("fixed_allowance", { precision: 16, scale: 2 })
+      .notNull()
+      .default("0"),
+    bankName: text("bank_name"),
+    bankAccountNumber: text("bank_account_number"),
+    bankAccountName: text("bank_account_name"),
+    npwp: text("npwp"),
+    bpjsKesehatanNumber: text("bpjs_kesehatan_number"),
+    bpjsKetenagakerjaanNumber: text("bpjs_ketenagakerjaan_number"),
+    taxStatus: text("tax_status").notNull().default("TK/0"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
@@ -65,7 +88,18 @@ export const employees = pgTable(
   (t) => [
     index("employees_name_idx").on(t.name),
     index("employees_department_idx").on(t.departmentId),
+    index("employees_status_idx").on(t.employmentStatus),
     check("employees_status_chk", sql`${t.employmentStatus} in ('ACTIVE', 'INACTIVE')`),
+    check(
+      "employees_type_chk",
+      sql`${t.employmentType} in ('PERMANENT', 'CONTRACT', 'DAILY')`,
+    ),
+    check(
+      "employees_tax_status_chk",
+      sql`${t.taxStatus} in ('TK/0', 'TK/1', 'TK/2', 'TK/3', 'K/0', 'K/1', 'K/2', 'K/3')`,
+    ),
+    check("employees_basic_salary_chk", sql`${t.basicSalary} >= 0`),
+    check("employees_fixed_allowance_chk", sql`${t.fixedAllowance} >= 0`),
   ],
 );
 

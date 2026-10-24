@@ -124,7 +124,7 @@ test.describe("autentikasi", () => {
     ).toBeVisible();
 
     const roleGroup = page.getByRole("group", { name: "Pilih role" });
-    await expect(roleGroup.getByRole("button")).toHaveCount(8);
+    await expect(roleGroup.getByRole("button")).toHaveCount(11);
     await expect(
       roleGroup.getByRole("button", { name: "Administrator", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");

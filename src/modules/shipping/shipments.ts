@@ -11,6 +11,7 @@ import {
 } from "@/lib/db/schema";
 import { nextDocumentNumber } from "@/lib/utils/documents";
 import { nullable } from "@/lib/utils/strings";
+import { postShipmentToAccounting } from "@/modules/accounting/integration";
 import { postMovement } from "@/modules/inventory/engine";
 import { SO_STATUS_LABELS } from "@/modules/sales-order/status";
 import type { CancelShipmentInput, CreateShipmentInput } from "./schemas";
@@ -172,6 +173,7 @@ export async function postShipment(
         variantId: shipmentItems.variantId,
         quantity: shipmentItems.quantity,
         variantSku: productVariants.variantSku,
+        unitPrice: salesOrderItems.unitPrice,
         orderedQuantity: salesOrderItems.quantity,
       })
       .from(shipmentItems)
@@ -251,6 +253,8 @@ export async function postShipment(
       .where(eq(shipments.id, shipment.id))
       .returning();
     if (!updated) throw ApiError.badRequest("Gagal memposting pengiriman.");
+
+    await postShipmentToAccounting(tx, updated, order, lines, actorUserId);
 
     const recalculated = await recalculateSalesOrderFulfillmentStatus(tx, order.id);
 

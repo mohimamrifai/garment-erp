@@ -1,7 +1,9 @@
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
+  accounts,
+  attendanceRecords,
   billsOfMaterials,
   bomItems,
   buyers,
@@ -9,15 +11,21 @@ import {
   employees,
   finishedGoods,
   inventoryTransactions,
+  leaveRequests,
+  leaveTypes,
   materials,
+  payrollRuns,
+  payments,
   productionLines,
   productionOrders,
   productionStages,
   productVariants,
   products,
+  purchaseBills,
   purchaseOrders,
   qcInspections,
   roles,
+  salesInvoices,
   salesOrderItems,
   salesOrders,
   shipments,
@@ -28,14 +36,22 @@ import {
   warehouseLocations,
   warehouses,
 } from "@/lib/db/schema";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/lib/demo-accounts";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD, type DemoAccount } from "@/lib/demo-accounts";
 import { ROLE_SEED, type RoleCode } from "@/lib/permissions";
-import { getDateOffset, getTodayDate } from "@/lib/utils/dates";
+import { getDateOffset, getDocumentPeriod, getTodayDate } from "@/lib/utils/dates";
 import { nextDocumentNumber } from "@/lib/utils/documents";
 import {
   recordFinishedGoodsLot,
   resolveFinishedGoodsLocationId,
 } from "@/modules/finished-goods/service";
+import {
+  approvePayrollRun,
+  createPayrollRun,
+  payPayrollRun,
+} from "@/modules/payroll/service";
+import { ACCOUNT_KEYS } from "@/modules/accounting/constants";
+import { createPayment, postJournalEntry } from "@/modules/accounting/service";
+import { ensureLeaveTypes } from "@/modules/hr/service";
 import { adjustStock, transferStock } from "@/modules/inventory/service";
 import {
   createMaterialReceipt,
@@ -61,8 +77,15 @@ import {
 
 const DEFAULT_PASSWORD = process.env.SEED_DEFAULT_PASSWORD ?? DEMO_PASSWORD;
 
-/** Satu akun demo per role (sumber: src/lib/demo-accounts.ts). */
-const SEED_USERS = DEMO_ACCOUNTS;
+/** Akun tambahan untuk modul final; tidak ditampilkan di tombol masuk cepat. */
+const EXTRA_SEED_USERS: readonly DemoAccount[] = [
+  { email: "hr@garment.local", name: "Staff HR", roleCode: "HR_STAFF" },
+  { email: "payroll@garment.local", name: "Admin Payroll", roleCode: "PAYROLL_ADMIN" },
+  { email: "finance@garment.local", name: "Staff Keuangan", roleCode: "FINANCE_STAFF" },
+];
+
+/** Satu akun demo per role inti + akun modul final. */
+const SEED_USERS = [...DEMO_ACCOUNTS, ...EXTRA_SEED_USERS];
 
 const SAMPLE_BUYERS: readonly {
   name: string;
@@ -164,6 +187,10 @@ const SAMPLE_EMPLOYEES: readonly {
   jobTitle: string;
   employmentStatus: "ACTIVE" | "INACTIVE";
   phone: string;
+  joinDate: string;
+  basicSalary: string;
+  fixedAllowance: string;
+  taxStatus: "TK/0" | "K/0" | "K/1";
 }[] = [
   {
     name: "Andi Wijaya",
@@ -171,6 +198,10 @@ const SAMPLE_EMPLOYEES: readonly {
     jobTitle: "Kepala Cutting",
     employmentStatus: "ACTIVE",
     phone: "0812-1111-2201",
+    joinDate: "2023-02-01",
+    basicSalary: "7500000.00",
+    fixedAllowance: "750000.00",
+    taxStatus: "K/1",
   },
   {
     name: "Dewi Lestari",
@@ -178,6 +209,10 @@ const SAMPLE_EMPLOYEES: readonly {
     jobTitle: "Supervisor Sewing",
     employmentStatus: "ACTIVE",
     phone: "0812-1111-2202",
+    joinDate: "2023-04-17",
+    basicSalary: "6500000.00",
+    fixedAllowance: "500000.00",
+    taxStatus: "K/0",
   },
   {
     name: "Rina Kartika",
@@ -185,6 +220,10 @@ const SAMPLE_EMPLOYEES: readonly {
     jobTitle: "Operator Jahit",
     employmentStatus: "ACTIVE",
     phone: "0812-1111-2203",
+    joinDate: "2024-01-08",
+    basicSalary: "4800000.00",
+    fixedAllowance: "250000.00",
+    taxStatus: "TK/0",
   },
   {
     name: "Joko Susilo",
@@ -192,6 +231,10 @@ const SAMPLE_EMPLOYEES: readonly {
     jobTitle: "Operator Finishing",
     employmentStatus: "ACTIVE",
     phone: "0812-1111-2204",
+    joinDate: "2024-03-11",
+    basicSalary: "4500000.00",
+    fixedAllowance: "200000.00",
+    taxStatus: "TK/0",
   },
   {
     name: "Slamet Riyadi",
@@ -199,6 +242,10 @@ const SAMPLE_EMPLOYEES: readonly {
     jobTitle: "Staf Gudang",
     employmentStatus: "ACTIVE",
     phone: "0812-1111-2205",
+    joinDate: "2024-06-03",
+    basicSalary: "4200000.00",
+    fixedAllowance: "150000.00",
+    taxStatus: "TK/0",
   },
   {
     name: "Budi Hartono",
@@ -206,6 +253,10 @@ const SAMPLE_EMPLOYEES: readonly {
     jobTitle: "Staf Gudang",
     employmentStatus: "INACTIVE",
     phone: "0812-1111-2206",
+    joinDate: "2022-08-01",
+    basicSalary: "4000000.00",
+    fixedAllowance: "0.00",
+    taxStatus: "TK/0",
   },
 ];
 
@@ -246,8 +297,41 @@ async function seedOrganization(): Promise<void> {
         jobTitle: employee.jobTitle,
         employmentStatus: employee.employmentStatus,
         phone: employee.phone,
+        joinDate: employee.joinDate,
+        employmentType: "PERMANENT",
+        basicSalary: employee.basicSalary,
+        fixedAllowance: employee.fixedAllowance,
+        taxStatus: employee.taxStatus,
+        bankName: "BCA",
+        bankAccountNumber: `12345678${code.replace(/\D/g, "").slice(-4)}`,
+        bankAccountName: employee.name,
+        npwp: "00.000.000.0-000.000",
+        bpjsKesehatanNumber: `00012345${code.replace(/\D/g, "").slice(-4)}`,
+        bpjsKetenagakerjaanNumber: `00098765${code.replace(/\D/g, "").slice(-4)}`,
       });
     }
+  }
+
+  // Data lama (sebelum modul payroll) diberi nilai default agar demo langsung
+  // dapat menjalankan payroll. Hanya menyentuh gaji yang masih nol.
+  const payrollDefaults = await db
+    .select({ id: employees.id, name: employees.name })
+    .from(employees)
+    .where(sql`${employees.basicSalary} = 0`);
+  for (const row of payrollDefaults) {
+    const sample = SAMPLE_EMPLOYEES.find((employee) => employee.name === row.name);
+    await db
+      .update(employees)
+      .set({
+        joinDate: sample?.joinDate ?? "2024-01-01",
+        employmentType: "PERMANENT",
+        basicSalary: sample?.basicSalary ?? "4500000.00",
+        fixedAllowance: sample?.fixedAllowance ?? "200000.00",
+        taxStatus: sample?.taxStatus ?? "TK/0",
+        bankName: "BCA",
+        bankAccountName: row.name,
+      })
+      .where(eq(employees.id, row.id));
   }
 
   const existingLines = await db.select({ id: productionLines.id }).from(productionLines).limit(1);
@@ -1397,6 +1481,223 @@ async function createDemoHoodieOrder(input: {
   return { orderId: order.id, itemId: item.id };
 }
 
+function recentWeekdays(count: number): string[] {
+  const days: string[] = [];
+  let offset = 0;
+  while (days.length < count && offset < 21) {
+    const date = getDateOffset(-offset);
+    const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
+    if (weekday !== 0 && weekday !== 6) days.push(date);
+    offset += 1;
+  }
+  return days.reverse();
+}
+
+function firstWeekdayOfMonth(month: string): string {
+  for (let day = 1; day <= 7; day += 1) {
+    const date = `${month}-${String(day).padStart(2, "0")}`;
+    const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
+    if (weekday !== 0 && weekday !== 6) return date;
+  }
+  return `${month}-01`;
+}
+
+async function seedHr(actorUserId: string): Promise<void> {
+  await ensureLeaveTypes(db);
+  const month = getTodayDate().slice(0, 7);
+  const employeeRows = await db
+    .select({ id: employees.id, code: employees.code, name: employees.name })
+    .from(employees)
+    .where(eq(employees.employmentStatus, "ACTIVE"))
+    .orderBy(asc(employees.code));
+  const days = recentWeekdays(5);
+
+  for (const employee of employeeRows) {
+    for (const [index, date] of days.entries()) {
+      await db
+        .insert(attendanceRecords)
+        .values({
+          employeeId: employee.id,
+          attendanceDate: date,
+          status: index === 0 && employee.name === "Rina Kartika" ? "LATE" : "PRESENT",
+          checkIn: index === 0 && employee.name === "Rina Kartika" ? "08:20" : "07:55",
+          checkOut: "17:05",
+          overtimeHours:
+            employee.name === "Rina Kartika" && index === days.length - 1 ? "1.50" : "0.00",
+          notes: index === 0 ? "Seed demo absensi." : null,
+          createdBy: actorUserId,
+        })
+        .onConflictDoNothing({
+          target: [attendanceRecords.employeeId, attendanceRecords.attendanceDate],
+        });
+    }
+  }
+
+  const existingLeave = await db
+    .select({ id: leaveRequests.id })
+    .from(leaveRequests)
+    .limit(1);
+  if (existingLeave.length > 0) return;
+
+  const [unpaidType] = await db
+    .select({ id: leaveTypes.id })
+    .from(leaveTypes)
+    .where(eq(leaveTypes.code, "CUTI_TIDAK_DIBAYAR"))
+    .limit(1);
+  const joko = employeeRows.find((employee) => employee.name === "Joko Susilo");
+  if (!unpaidType || !joko) return;
+
+  const number = await nextDocumentNumber(db, "CUTI", {
+    period: getDocumentPeriod(),
+  });
+  await db.insert(leaveRequests).values({
+    number,
+    employeeId: joko.id,
+    leaveTypeId: unpaidType.id,
+    startDate: firstWeekdayOfMonth(month),
+    endDate: firstWeekdayOfMonth(month),
+    days: 1,
+    reason: "Keperluan keluarga (data demo).",
+    status: "APPROVED",
+    approvedBy: actorUserId,
+    approvedAt: new Date(),
+    createdBy: actorUserId,
+  });
+}
+
+/**
+ * Seed akuntansi contoh: saldo awal kas/modal, satu pelunasan faktur, dan satu
+ * pembayaran tagihan. Semua lewat service agar jurnal, subledger, dan audit
+ * konsisten. Idempotent per dokumen referensi.
+ */
+async function seedAccounting(actorUserId: string): Promise<void> {
+  const today = getTodayDate();
+  await db.transaction(async (tx) => {
+    await postJournalEntry(tx, {
+      date: `${today.slice(0, 7)}-01`,
+      description: "Saldo awal kas dan modal pemilik (data demo).",
+      sourceType: "seed-opening-balance",
+      sourceId: "00000000-0000-4000-8000-000000000001",
+      sourceEvent: "post",
+      cashFlowCategory: "FINANCING",
+      lines: [
+        {
+          accountKey: ACCOUNT_KEYS.CASH,
+          debit: 150_000_000,
+          credit: 0,
+          description: "Saldo awal kas",
+        },
+        {
+          accountKey: ACCOUNT_KEYS.RETAINED_EARNINGS,
+          debit: 0,
+          credit: 150_000_000,
+          description: "Modal awal pemilik",
+        },
+      ],
+      actorUserId,
+    });
+  });
+
+  const [bank] = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(and(eq(accounts.isCashBank, true), eq(accounts.isActive, true)))
+    .limit(1);
+  if (!bank) return;
+
+  const [invoice] = await db
+    .select({ id: salesInvoices.id, total: salesInvoices.total })
+    .from(salesInvoices)
+    .where(and(ne(salesInvoices.status, "PAID"), ne(salesInvoices.status, "CANCELLED")))
+    .orderBy(asc(salesInvoices.number))
+    .limit(1);
+  if (invoice) {
+    const [paid] = await db
+      .select({ id: payments.id })
+      .from(payments)
+      .where(
+        and(
+          eq(payments.referenceType, "SALES_INVOICE"),
+          eq(payments.referenceId, invoice.id),
+        ),
+      )
+      .limit(1);
+    if (!paid) {
+      await createPayment(
+        {
+          type: "RECEIPT",
+          date: today,
+          amount: Number(invoice.total),
+          accountId: bank.id,
+          referenceType: "SALES_INVOICE",
+          referenceId: invoice.id,
+          notes: "Pelunasan faktur contoh (data demo).",
+        },
+        actorUserId,
+      );
+    }
+  }
+
+  const [bill] = await db
+    .select({ id: purchaseBills.id, total: purchaseBills.total })
+    .from(purchaseBills)
+    .where(and(ne(purchaseBills.status, "PAID"), ne(purchaseBills.status, "CANCELLED")))
+    .orderBy(asc(purchaseBills.number))
+    .limit(1);
+  if (bill) {
+    const [paid] = await db
+      .select({ id: payments.id })
+      .from(payments)
+      .where(
+        and(
+          eq(payments.referenceType, "PURCHASE_BILL"),
+          eq(payments.referenceId, bill.id),
+        ),
+      )
+      .limit(1);
+    if (!paid) {
+      await createPayment(
+        {
+          type: "PAYMENT",
+          date: today,
+          amount: Number(bill.total),
+          accountId: bank.id,
+          referenceType: "PURCHASE_BILL",
+          referenceId: bill.id,
+          notes: "Pembayaran tagihan contoh (data demo).",
+        },
+        actorUserId,
+      );
+    }
+  }
+}
+
+async function seedPayroll(actorUserId: string): Promise<void> {
+  const existing = await db.select({ id: payrollRuns.id }).from(payrollRuns).limit(1);
+  if (existing.length > 0) return;
+
+  const current = new Date(`${getTodayDate()}T00:00:00Z`);
+  const previousMonth = new Date(
+    Date.UTC(current.getUTCFullYear(), current.getUTCMonth() - 1, 1),
+  );
+  const period = previousMonth.toISOString().slice(0, 7);
+  const run = await createPayrollRun({ period }, actorUserId);
+  await approvePayrollRun(run.id, actorUserId);
+
+  const [bank] = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(and(eq(accounts.isCashBank, true), eq(accounts.isActive, true)))
+    .limit(1);
+  if (bank) {
+    await payPayrollRun(
+      run.id,
+      { accountId: bank.id, date: getTodayDate() },
+      actorUserId,
+    );
+  }
+}
+
 /**
  * Seed idempotent untuk development: role, akun demo, buyer, master data
  * organisasi & produk, gudang, BOM contoh, sales order, purchase order,
@@ -1452,6 +1753,15 @@ export async function runSeed(): Promise<void> {
 
     console.log("Seed: barang jadi & pengiriman contoh...");
     await seedShipping(adminRow.id);
+
+    console.log("Seed: saldo awal & pembayaran akuntansi contoh...");
+    await seedAccounting(adminRow.id);
+
+    console.log("Seed: absensi & cuti contoh...");
+    await seedHr(adminRow.id);
+
+    console.log("Seed: payroll contoh...");
+    await seedPayroll(adminRow.id);
   }
 
   console.log(`Seed selesai. Akun admin: ${adminEmail} (password: ${DEFAULT_PASSWORD}).`);

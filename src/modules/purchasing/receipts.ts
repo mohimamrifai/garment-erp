@@ -11,6 +11,7 @@ import {
 } from "@/lib/db/schema";
 import { nextDocumentNumber } from "@/lib/utils/documents";
 import { nullable } from "@/lib/utils/strings";
+import { postMaterialReceiptToAccounting } from "@/modules/accounting/integration";
 import { postMovement, toQuantityString } from "@/modules/inventory/engine";
 import type { CancelMaterialReceiptInput, MaterialReceiptFormInput } from "./schemas";
 import {
@@ -176,6 +177,7 @@ export async function postMaterialReceipt(
         materialId: purchaseOrderItems.materialId,
         materialName: materials.name,
         unitCode: unitsOfMeasure.code,
+        unitPrice: purchaseOrderItems.unitPrice,
         receivedQuantity: materialReceiptItems.receivedQuantity,
         acceptedQuantity: materialReceiptItems.acceptedQuantity,
       })
@@ -242,6 +244,8 @@ export async function postMaterialReceipt(
     if (!updated) throw ApiError.notFound("Penerimaan material tidak ditemukan.");
 
     const nextStatus = await refreshPurchaseOrderStatus(tx, order.id);
+
+    await postMaterialReceiptToAccounting(tx, updated, order, items, actorUserId);
 
     await recordAudit(tx, {
       actorUserId,
