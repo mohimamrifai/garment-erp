@@ -68,6 +68,18 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     items: [{ title: "Asisten AI", href: "/asisten-ai", icon: Sparkles, roles: ALL_ROLES }],
   },
   {
+    label: "Bantuan",
+    icon: CircleHelp,
+    items: [
+      {
+        title: "Dokumentasi",
+        href: "/docs",
+        icon: BookOpen,
+        roles: ALL_ROLES,
+      },
+    ],
+  },
+  {
     label: "Penjualan",
     icon: ShoppingBag,
     items: [
@@ -290,18 +302,6 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     items: [
       { title: "Pengguna", href: "/settings/users", icon: Users, roles: ["ADMIN"] },
       { title: "Audit Log", href: "/settings/audit", icon: ScrollText, roles: ["ADMIN"] },
-    ],
-  },
-  {
-    label: "Bantuan",
-    icon: CircleHelp,
-    items: [
-      {
-        title: "Dokumentasi",
-        href: "/docs",
-        icon: BookOpen,
-        roles: ALL_ROLES,
-      },
     ],
   },
 ];
