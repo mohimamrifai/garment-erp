@@ -30,6 +30,14 @@ Belum ada komitmen jadwal; prioritas menyesuaikan kebutuhan demo/portofolio beri
 - **Integrasi eksternal** (Accurate/Xero, API kurir/resi).
 - **Portal buyer** (read-only status pesanan/pengiriman) dengan akses terbatas.
 
+## Asisten AI (ditunda)
+
+- **RAG dokumen internal** (pgvector) dengan sitasi sumber dan pembatasan akses per role.
+- **Tool read-only terbatas** (stok, status dokumen, laporan) melalui allowlist; tanpa akses DB
+  langsung dan tanpa tool mutasi.
+- **Memori percakapan opt-in** dengan kontrol privasi, retensi, dan penghapusan oleh pengguna.
+- Evaluasi kualitas jawaban, guardrail anti-halusinasi, dan observability biaya model.
+
 ## Performa & Arsitektur
 
 - **Cache** agregasi dashboard/laporan dengan `use cache` + invalidasi berbasis tag.

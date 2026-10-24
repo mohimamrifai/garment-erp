@@ -267,7 +267,14 @@ sedang berjalan). Rate limit Better Auth dimatikan hanya untuk E2E lewat env
   # dari mesin lokal, dengan connection string DIRECT dari Neon Console
   DATABASE_URL="postgresql://...@ep-....aws.neon.tech/neondb?sslmode=require" pnpm db:migrate
   DATABASE_URL="postgresql://...@ep-....aws.neon.tech/neondb?sslmode=require" pnpm db:seed
+
+  # khusus database lama yang sudah berisi transaksi sebelum modul akuntansi:
+  DATABASE_URL="postgresql://...@ep-....aws.neon.tech/neondb?sslmode=require" \
+    npx tsx scripts/backfill-accounting.ts
   ```
+
+  Urutan aman untuk database produksi lama: **migrate → backfill → seed** (seed idempotent
+  dan menambahkan akun/role HR/payroll/keuangan, saldo awal, serta contoh pembayaran).
 
 - **Vercel** — project region `sin1` (Singapore), env vars: `DATABASE_URL` (pooled),
   `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (URL publik deployment), `NEXT_PUBLIC_DEMO_MODE=1`
